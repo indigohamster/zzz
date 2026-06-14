@@ -2,8 +2,8 @@
 
 ## 当前版本
 
-Commit: `14ebd96`
-分支: `master` → 远程 `origin/main`
+Commit: `8ec7838`
+分支: `main` → 远程 `origin/main`
 仓库: `https://github.com/indigohamster/zzz`
 
 ## 当前状态
@@ -19,6 +19,7 @@ Commit: `14ebd96`
 - 早晨反馈结算 + 遗迹/武器经验/进化奖励系统
 - 主角精灵模块（ProtagonistSprite.js）
 - Git 仓库 + GitHub 远程
+- **绘制倾向系统：让绘制内容真正影响战斗体验** ⭐ 新增
 
 ### 未完成 (P1)
 - 增强不同武器攻击动画差异
