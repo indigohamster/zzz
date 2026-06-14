@@ -3,9 +3,19 @@ import { GRAVITY, MAX_FALL } from "./InkwellConfig.js";
 import { pickBossVariant } from "./BossCatalog.js?v=24";
 import { pickMonsterForRoom } from "./MonsterCatalog.js";
 
-export function createNpcManager({ physics, player, run, tileMap, combat }) {
+export function createNpcManager({ physics, player, run, tileMap, combat, gameState }) {
   const npcs = [];
   let bossVariant = null;
+
+  // 根据压力计算敌人强度乘数
+  function getStressMultiplier() {
+    if (!gameState) return 1.0;
+    const stress = gameState.status.stress;
+    // 压力 0-30: 1.0x, 压力 30-70: 1.1-1.3x, 压力 70-100: 1.3-1.5x
+    if (stress >= 70) return 1.3 + (stress - 70) / 100;
+    if (stress >= 30) return 1.0 + (stress - 30) / 150;
+    return 1.0;
+  }
 
   function reset() {
     npcs.length = 0;
@@ -19,12 +29,16 @@ export function createNpcManager({ physics, player, run, tileMap, combat }) {
   }
 
   function spawnInRoom(room, count, hp, boss = false) {
+    const stressMultiplier = getStressMultiplier();
+    const adjustedHp = Math.round(hp * stressMultiplier);
+    
     for (let i = 0; i < count; i++) {
       const archetype = boss ? null : pickEnemyArchetype(room.type);
       const spread = (room.w - 20) / (count + 1);
       const jitter = (Math.random() - 0.5) * Math.min(12, spread);
       const x = (room.x + 10 + (i + 1) * spread + jitter) * TILE;
       const y = (room.y + room.h - 8) * TILE + (archetype?.spawnYOffset ?? 0);
+      const finalHp = adjustedHp + Math.round((archetype?.hpBonus ?? 0) * stressMultiplier);
       npcs.push({
         x,
         y,
@@ -33,8 +47,8 @@ export function createNpcManager({ physics, player, run, tileMap, combat }) {
         h: boss ? 30 : archetype?.h ?? 20,
         vx: i % 2 === 0 ? -0.35 : 0.35,
         vy: 0,
-        hp: hp + (archetype?.hpBonus ?? 0),
-        maxHp: hp + (archetype?.hpBonus ?? 0),
+        hp: finalHp,
+        maxHp: finalHp,
         hurt: 0,
         flash: 0,
         boss,
@@ -217,7 +231,9 @@ export function createNpcManager({ physics, player, run, tileMap, combat }) {
     const touchX = npc.boss ? 24 : 16;
     const touchY = npc.boss ? 28 : 22;
     if (npc.contactCooldown <= 0 && Math.abs(player.x - npc.x) < touchX && Math.abs(player.y - npc.y) < touchY) {
-      const damage = npc.boss ? 8 : (npc.archetype?.contactDamage ?? 5);
+      const baseDamage = npc.boss ? 8 : (npc.archetype?.contactDamage ?? 5);
+      const stressMultiplier = getStressMultiplier();
+      const damage = Math.round(baseDamage * stressMultiplier);
       const didHit = combat.hitPlayer({
         amount: damage,
         sourceX: npc.x,

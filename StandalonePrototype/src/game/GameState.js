@@ -11,10 +11,11 @@ export function createGameState() {
     money: 0,
     status: {
       hp: 100,
-      fatigue: 0,
-      mood: "tired",
-      emotion: "calm",
-      inspiration: 0,
+      fatigue: 0,        // 疲惫度 (0-100)
+      mood: "tired",      // 心情 (tired, normal, good, great)
+      emotion: "calm",    // 情绪 (calm, anxious, angry, inspired)
+      inspiration: 0,     // 灵感 (0-100)
+      stress: 0,          // 压力 (0-100) ← 新增
       inkMax: 100,
     },
     currentBrief: {

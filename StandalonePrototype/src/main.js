@@ -41,7 +41,7 @@ window.inkwellBuild = {
   state: gameState.buildState,
   addRelic: (id) => gameState.buildState.addRelic(id),
   removeRelic: (id) => gameState.buildState.removeRelic(id),
-  choices: (count = 3) => generateRelicChoices(gameState.buildState, getWeaponTypeFromProfile(gameState.currentWeapon), count),
+  choices: (count = 3) => generateRelicChoices(gameState.buildState, getWeaponTypeFromProfile(gameState.currentWeapon), count, gameState.status.inspiration),
 };
 const dayCycle = createDayCycle(gameState);
 const drawingCanvas = createDrawingCanvas(drawPanel);
@@ -339,6 +339,100 @@ function drawFinishedWeaponPanel() {
   drawWeaponResultPanel(ctx, gameState.currentWeapon, label);
 }
 
+function updateWorkPhase() {
+  // Work 阶段暂时不需要更新逻辑
+  // 主要是等待玩家按 Enter 键继续
+}
+
+function drawWorkPhase() {
+  // 绘制纸张背景
+  drawPaperBackground(ctx);
+  
+  // 获取当前工作事件
+  const currentEvent = dayCycle.getCurrentWorkEvent();
+  if (!currentEvent) {
+    // 没有事件了，应该不会到这里（应该已经切换到 studio 场景了）
+    label(ctx, "Work phase complete. Entering studio...", 70, 70, 26);
+    return;
+  }
+  
+  // 绘制事件标题
+  label(ctx, `Day ${gameState.day} - Work Phase`, 70, 70, 26);
+  
+  // 绘制事件类型图标
+  const eventTypeIcons = {
+    "overtime": "[加班]",
+    "requirement_change": "[需求修改]",
+    "client_feedback": "[客户反馈]",
+    "urgent_task": "[临时任务]",
+    "positive": "[积极事件]",
+  };
+  const icon = eventTypeIcons[currentEvent.type] || "[事件]";
+  label(ctx, `${icon} ${currentEvent.title}`, 70, 120, 22);
+  
+  // 绘制事件描述（支持换行）
+  const descLines = currentEvent.description.split("\n");
+  let yPos = 170;
+  descLines.forEach(line => {
+    label(ctx, line, 70, yPos, 18);
+    yPos += 30;
+  });
+  
+  // 绘制状态变化
+  yPos += 20;
+  ctx.fillStyle = "#8d1d25";
+  ctx.font = "bold 18px Segoe UI, Microsoft YaHei, sans-serif";
+  ctx.fillText("Status Changes:", 70, yPos);
+  yPos += 35;
+  
+  ctx.fillStyle = "#24211f";
+  ctx.font = "16px Segoe UI, Microsoft YaHei, sans-serif";
+  
+  const effects = currentEvent.effects;
+  if (effects.stress) {
+    const sign = effects.stress > 0 ? "+" : "";
+    ctx.fillText(`Stress: ${sign}${effects.stress}`, 90, yPos);
+    yPos += 25;
+  }
+  if (effects.fatigue) {
+    const sign = effects.fatigue > 0 ? "+" : "";
+    ctx.fillText(`Fatigue: ${sign}${effects.fatigue}`, 90, yPos);
+    yPos += 25;
+  }
+  if (effects.inspiration) {
+    const sign = effects.inspiration > 0 ? "+" : "";
+    ctx.fillText(`Inspiration: ${sign}${effects.inspiration}`, 90, yPos);
+    yPos += 25;
+  }
+  if (effects.mood) {
+    ctx.fillText(`Mood: ${effects.mood}`, 90, yPos);
+    yPos += 25;
+  }
+  
+  // 绘制当前状态
+  yPos += 20;
+  const { getStatusDescription } = require("./game/WorkEvents.js");
+  const statusDesc = getStatusDescription(gameState.status);
+  ctx.fillStyle = "#8d1d25";
+  ctx.font = "bold 16px Segoe UI, Microsoft YaHei, sans-serif";
+  ctx.fillText("Current Status:", 70, yPos);
+  yPos += 30;
+  
+  ctx.fillStyle = "#24211f";
+  ctx.font = "16px Segoe UI, Microsoft YaHei, sans-serif";
+  ctx.fillText(statusDesc, 90, yPos);
+  
+  // 绘制进度
+  const progress = dayCycle.getWorkProgress();
+  yPos += 40;
+  ctx.fillStyle = "#666";
+  ctx.font = "14px Segoe UI, Microsoft YaHei, sans-serif";
+  ctx.fillText(`Event ${progress.current + 1} / ${progress.total}`, 70, yPos);
+  
+  // 绘制提示
+  label(ctx, "Enter: continue", 70, 462, 18);
+}
+
 function drawFeedback() {
   drawPaperBackground(ctx);
   label(ctx, feedback.title, 70, 70, 26);
@@ -359,6 +453,7 @@ function update() {
   if (scene === "opening") openingScene.update();
   if (scene === "studio") updateDrawing();
   if (scene === "inkwell") inkwell.update();
+  if (scene === "work") updateWorkPhase();
 }
 
 function draw() {
@@ -367,6 +462,7 @@ function draw() {
   if (scene === "studio") drawStudio();
   if (scene === "inkwell") inkwell.draw();
   if (scene === "feedback") drawFeedback();
+  if (scene === "work") drawWorkPhase();
 }
 
 function loop() {
@@ -419,11 +515,17 @@ window.addEventListener("keydown", (event) => {
   if (key === "e" && scene === "studio") setDrawingTool("eraser");
   if (key === "r" && scene === "studio") clearDrawing();
   if (key === "enter" && scene === "studio" && drawingCanvas.hasEnoughPoints()) enterInkwell();
+  if (key === "enter" && scene === "work") {
+    const hasMoreEvents = dayCycle.advanceWorkEvent();
+    if (!hasMoreEvents) {
+      scene = "studio"; // 所有事件完成，进入 studio
+    }
+  }
   if (key === "enter" && scene === "feedback") {
     gameState.day++;
-    dayCycle.setPhase("free");
+    dayCycle.setPhase("work"); // 进入 work 阶段
     clearDrawing();
-    scene = "studio";
+    scene = "work"; // 设置场景为 work
   }
 });
 
