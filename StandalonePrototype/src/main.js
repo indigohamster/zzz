@@ -8,6 +8,7 @@ import { validateWeaponProfile } from "./game/WeaponProfile.js?v=32";
 import { generateRelicChoices } from "./game/builds/RewardGenerator.js?v=32";
 import { getWeaponTypeFromProfile } from "./game/builds/WeaponArchetypes.js?v=32";
 import { createInkwellScene } from "./scenes/inkwell.js?v=36";
+import { createOpeningScene } from "./scenes/OpeningScene.js";
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -22,7 +23,7 @@ const pointerInput = {
   lastLogKey: "",
 };
 
-let scene = "studio";
+let scene = "opening";
 let frame = 0;
 
 const drawPanel = { x: 86, y: 92, w: 420, h: 330 };
@@ -70,6 +71,14 @@ const inkwell = createInkwellScene({
   onFinish: finishInkwellRun,
 });
 
+
+const openingScene = createOpeningScene({
+  canvas,
+  ctx,
+  keys,
+  mouse,
+  onDone: () => { scene = "studio"; },
+});
 window.DEBUG_SET_WEAPON_TYPE = setDebugWeaponType;
 
 function clearDrawing() {
@@ -337,11 +346,13 @@ function drawFeedback() {
 }
 
 function update() {
+  if (scene === "opening") openingScene.update();
   if (scene === "studio") updateDrawing();
   if (scene === "inkwell") inkwell.update();
 }
 
 function draw() {
+  if (scene === "opening") openingScene.draw();
   if (scene === "studio") drawStudio();
   if (scene === "inkwell") inkwell.draw();
   if (scene === "feedback") drawFeedback();
@@ -360,6 +371,7 @@ function loop() {
   }
 }
 
+openingScene.start();
 clearDrawing();
 loop();
 
@@ -389,6 +401,7 @@ window.addEventListener("keydown", (event) => {
     return;
   }
   keys.add(key);
+  if (scene === "opening") { openingScene.handleKey(key); return; }
   if (scene === "inkwell") inkwell.handleKey(key);
   if (key === "p" && scene === "studio") setDrawingTool("pencil");
   if (key === "e" && scene === "studio") setDrawingTool("eraser");
@@ -449,6 +462,7 @@ function handlePrimaryDown(event) {
   canvas.setPointerCapture?.(event.pointerId);
 
   if (event.button === 0 || event.pointerType === "touch" || event.pointerType === "pen") {
+    if (scene === "opening") { openingScene.handleClick(); return; }
     if (scene === "studio" && !drawingComplete) {
       const toolButton = drawingToolButtons.find((button) => pointInRect(mouse.x, mouse.y, button));
       if (toolButton) {
@@ -531,6 +545,7 @@ window.addEventListener("resize", () => {
   const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
   logCanvasInputMetrics(rect, scaleX, scaleY, "resize");
 });
+
 
 
 

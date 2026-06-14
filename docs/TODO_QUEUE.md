@@ -1,4 +1,4 @@
-# Todo Queue
+﻿# Todo Queue
 
 ## 当前优先级 P0
 
@@ -9,7 +9,7 @@
 让不同武器的攻击判定更符合视觉表现，减少明显打不中的情况。
 
 完成记录：
-- 根因：swept melee 命中检测未计入 NPC 体积（getNpcHitRadius）
+- 原因：swept melee 命中检测未计入 NPC 体积（getNpcHitRadius）
 - 修复：isNpcInSweepSample 四个检测点全部加入 npcRadius 补偿（inner/tip/range + npcRadius，angle + Math.asin角度容差）
 
 验收标准：
@@ -26,19 +26,15 @@
 ### P0-2 修复角色转向后武器方向异常
 状态：已处理，需实机复测。
 
-目标：
-玩家转向后，武器视觉方向、攻击方向、判定框方向保持一致。
+### NEW: OpeningScene 开场场景
+状态：已完成，待验证。
 
-完成记录：
-- 攻击开始时以 Player 当前 facing 作为方向快照来源。
-- AttackController 记录 `attackDirection`，并输出 `[AttackDirection]` 调试日志。
-- swept melee 实际命中检测与调试绘制统一使用 `attackAngle`。
-
-验收标准：
-- 向左攻击时判定框在左侧
-- 向右攻击时判定框在右侧
-- 向上/向下攻击时判定框正确偏移
-- 不同武器不会因为转向而变成错误攻击方式
+内容：
+- 5 个叙事阶段：下班、到家、工作室、墨点、墨境入口
+- 逐字浮现的中文叙事文本
+- 背景氛围渲染（城市夜景、走廊、工作室、墨点发光、传送门）
+- 支持 Enter/点击 跳过阶段
+- 完成后自动转入 studio 场景
 
 ---
 
