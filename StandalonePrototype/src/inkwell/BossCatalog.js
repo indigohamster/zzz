@@ -1,0 +1,51 @@
+export const BOSS_VARIANTS = [
+  {
+    id: "template_engine",
+    name: "Template Engine",
+    hp: 155,
+    color: "#111016",
+    eye: "#f1ead9",
+    damageScale: 0.9,
+    resistances: { "patient line": 0.78 },
+    combatTags: ["boss", "elite", "swarm"],
+    weakness: ["whip"],
+    resistance: ["dagger"],
+    resistanceLabel: "resists patient line",
+    moveSpeed: 1.05,
+    skill: "pulse",
+  },
+  {
+    id: "eraser_warden",
+    name: "Eraser Warden",
+    hp: 185,
+    color: "#e8e4d6",
+    eye: "#1d1b25",
+    damageScale: 0.72,
+    resistances: { "reworked core": 0.72, plain: 0.86 },
+    combatTags: ["boss", "elite", "armored", "shielded"],
+    weakness: ["hammer"],
+    resistance: ["sword"],
+    resistanceLabel: "resists heavy revisions",
+    moveSpeed: 0.82,
+    skill: "slam",
+  },
+  {
+    id: "printhead_maw",
+    name: "Printhead Maw",
+    hp: 135,
+    color: "#292632",
+    eye: "#b23b48",
+    damageScale: 1.0,
+    resistances: { "unpredictable edge": 0.76 },
+    combatTags: ["boss", "elite", "longBody", "reachSensitive"],
+    weakness: ["spear"],
+    resistance: ["hammer"],
+    resistanceLabel: "resists jagged edges",
+    moveSpeed: 1.45,
+    skill: "dash",
+  },
+];
+
+export function pickBossVariant() {
+  return BOSS_VARIANTS[Math.floor(Math.random() * BOSS_VARIANTS.length)];
+}
