@@ -10,6 +10,7 @@ import { getWeaponTypeFromProfile } from "./game/builds/WeaponArchetypes.js?v=32
 import { createInkwellScene } from "./scenes/inkwell.js?v=36";
 import { createOpeningScene } from "./scenes/OpeningScene.js";
 import { createChapter0Scene } from "./scenes/Chapter0.js?v=1";
+import { createShopState, buyShopItem, getAllShopItems, getCategories, getItemsByCategory } from "./game/ShopSystem.js";
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -50,6 +51,7 @@ let drawingComplete = false;
 let lastValidWeapon = null;
 let drawConfidence = 0;
 let recognitionFailed = false;
+let shopState = null; // 商店状态
 const confirmGenerateButton = { x: 548, y: 392, w: 176, h: 34 };
 
 let feedback = {
@@ -433,6 +435,153 @@ function drawWorkPhase() {
   label(ctx, "Enter: continue", 70, 462, 18);
 }
 
+function updateShop() {
+  if (!shopState) return;
+  
+  // 切换分类：Left / Right
+  if (keys.has("arrowleft") || keys.has("a")) {
+    keys.delete("arrowleft");
+    keys.delete("a");
+    const categories = getCategories();
+    const currentIndex = categories.findIndex(c => c.id === shopState.selectedCategory);
+    shopState.selectedCategory = categories[(currentIndex - 1 + categories.length) % categories.length].id;
+    shopState.selectedIndex = 0;
+  }
+  if (keys.has("arrowright") || keys.has("d")) {
+    keys.delete("arrowright");
+    keys.delete("d");
+    const categories = getCategories();
+    const currentIndex = categories.findIndex(c => c.id === shopState.selectedCategory);
+    shopState.selectedCategory = categories[(currentIndex + 1) % categories.length].id;
+    shopState.selectedIndex = 0;
+  }
+  
+  // 选择物品：Up / Down
+  const currentItems = getItemsByCategory(shopState.selectedCategory);
+  if (keys.has("arrowup") || keys.has("w")) {
+    keys.delete("arrowup");
+    keys.delete("w");
+    shopState.selectedIndex = Math.max(0, shopState.selectedIndex - 1);
+  }
+  if (keys.has("arrowdown") || keys.has("s")) {
+    keys.delete("arrowdown");
+    keys.delete("s");
+    shopState.selectedIndex = Math.min(currentItems.length - 1, shopState.selectedIndex + 1);
+  }
+  
+  // 购买：Enter
+  if (keys.has("enter")) {
+    keys.delete("enter");
+    const item = currentItems[shopState.selectedIndex];
+    if (item) {
+      const result = buyShopItem(gameState, item.id);
+      shopState.message = result.message;
+      shopState.messageTimer = 120; // 2 秒（60fps * 2）
+    }
+  }
+  
+  // 退出商店：Escape
+  if (keys.has("escape")) {
+    keys.delete("escape");
+    shopState = null;
+    scene = "free";
+  }
+  
+  // 消息计时器
+  if (shopState.messageTimer > 0) {
+    shopState.messageTimer--;
+  }
+}
+
+function drawShop() {
+  if (!shopState) return;
+  
+  // 绘制纸张背景
+  drawPaperBackground(ctx);
+  
+  // 绘制标题
+  label(ctx, "Shop", 70, 70, 26);
+  
+  // 绘制货币
+  ctx.fillStyle = "#24211f";
+  ctx.font = "bold 20px Segoe UI, Microsoft YaHei, sans-serif";
+  ctx.fillText(`Money: ${gameState.money}`, 490, 70);
+  
+  // 绘制分类标签
+  const categories = getCategories();
+  let categoryX = 70;
+  categories.forEach((cat) => {
+    const isSelected = cat.id === shopState.selectedCategory;
+    ctx.fillStyle = isSelected ? "#1f1e1c" : "#8d1d25";
+    ctx.font = isSelected ? "bold 18px Segoe UI, Microsoft YaHei, sans-serif" : "18px Segoe UI, Microsoft YaHei, sans-serif";
+    ctx.fillText(`${cat.icon} ${cat.name}`, categoryX, 120);
+    categoryX += ctx.measureText(`${cat.icon} ${cat.name}`).width + 30;
+  });
+  
+  // 绘制分隔线
+  ctx.strokeStyle = "#8d1d25";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(70, 135);
+  ctx.lineTo(610, 135);
+  ctx.stroke();
+  
+  // 获取当前分类的商品
+  const items = getItemsByCategory(shopState.selectedCategory);
+  
+  // 绘制商品列表
+  let yPos = 170;
+  items.forEach((item, index) => {
+    const isSelected = index === shopState.selectedIndex;
+    
+    // 绘制选中背景
+    if (isSelected) {
+      ctx.fillStyle = "rgba(141, 29, 37, 0.1)";
+      ctx.fillRect(70, yPos - 20, 540, 30);
+    }
+    
+    // 绘制商品名称
+    ctx.fillStyle = isSelected ? "#1f1e1c" : "#24211f";
+    ctx.font = isSelected ? "bold 16px Segoe UI, Microsoft YaHei, sans-serif" : "16px Segoe UI, Microsoft YaHei, sans-serif";
+    ctx.fillText(`${item.icon} ${item.name} - ${item.price} Money`, 90, yPos);
+    
+    yPos += 35;
+  });
+  
+  // 绘制选中商品的详细描述
+  if (items.length > 0) {
+    const selectedItem = items[shopState.selectedIndex];
+    let descY = 370;
+    
+    ctx.fillStyle = "#24211f";
+    ctx.font = "bold 16px Segoe UI, Microsoft YaHei, sans-serif";
+    ctx.fillText("Description:", 70, descY);
+    
+    descY += 30;
+    ctx.fillStyle = "#666";
+    ctx.font = "15px Segoe UI, Microsoft YaHei, sans-serif";
+    ctx.fillText(selectedItem.desc, 90, descY);
+    
+    // 绘制购买提示
+    descY += 50;
+    ctx.fillStyle = "#8d1d25";
+    ctx.font = "bold 16px Segoe UI, Microsoft YaHei, sans-serif";
+    ctx.fillText(`Press Enter to buy (${selectedItem.price} Money)`, 70, descY);
+  }
+  
+  // 绘制消息
+  if (shopState.message && shopState.messageTimer > 0) {
+    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.fillRect(100, 250, 400, 40);
+    ctx.fillStyle = shopState.message.includes("不足") || shopState.message.includes("已经拥有") ? "#d32f2f" : "#2e7d32";
+    ctx.font = "bold 16px Segoe UI, Microsoft YaHei, sans-serif";
+    ctx.fillText(shopState.message, 120, 275);
+  }
+  
+  // 绘制控制提示
+  label(ctx, "Left/Right: Switch category | Up/Down: Select item | Enter: Buy | Escape: Exit", 70, 462, 14);
+}
+
 function drawFeedback() {
   drawPaperBackground(ctx);
   label(ctx, feedback.title, 70, 70, 26);
@@ -454,6 +603,7 @@ function update() {
   if (scene === "studio") updateDrawing();
   if (scene === "inkwell") inkwell.update();
   if (scene === "work") updateWorkPhase();
+  if (scene === "shop") updateShop();
 }
 
 function draw() {
@@ -463,6 +613,7 @@ function draw() {
   if (scene === "inkwell") inkwell.draw();
   if (scene === "feedback") drawFeedback();
   if (scene === "work") drawWorkPhase();
+  if (scene === "shop") drawShop();
 }
 
 function loop() {
@@ -515,6 +666,10 @@ window.addEventListener("keydown", (event) => {
   if (key === "e" && scene === "studio") setDrawingTool("eraser");
   if (key === "r" && scene === "studio") clearDrawing();
   if (key === "enter" && scene === "studio" && drawingCanvas.hasEnoughPoints()) enterInkwell();
+  if (key === "s" && scene === "studio") {
+    shopState = createShopState();
+    scene = "shop";
+  }
   if (key === "enter" && scene === "work") {
     const hasMoreEvents = dayCycle.advanceWorkEvent();
     if (!hasMoreEvents) {
