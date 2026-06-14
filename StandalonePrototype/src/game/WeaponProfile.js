@@ -8,7 +8,7 @@ export const classification = {
   attackPattern: "arcSlash",
 };
 
-export function createWeaponProfile({ archetypeId, imageDataUrl, strokes, metrics, investment, traits = [], traitReasons = [], modifiers = [] }) {
+export function createWeaponProfile({ archetypeId, imageDataUrl, strokes, metrics, investment, traits = [], traitReasons = [], modifiers = [], drawingTendency = null }) {
   const archetype = getWeaponArchetype(archetypeId);
   const weaponType = normalizeProfileWeaponType(archetype.id);
   const normalizedModifiers = normalizeModifiers(modifiers);
@@ -33,6 +33,7 @@ export function createWeaponProfile({ archetypeId, imageDataUrl, strokes, metric
     metrics: safeMetrics,
     investment: normalizeInvestment(investment),
     confidence: archetype._confidence ?? 0,
+    drawingTendency, // <-- Store drawing tendency
     baseStats,
     traits: normalizedTraits,
     traitReasons: normalizeTraitReasons(traitReasons),

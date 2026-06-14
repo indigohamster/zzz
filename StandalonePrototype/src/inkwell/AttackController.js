@@ -837,14 +837,92 @@ function resolveBuildAttackStats(player, weapon = null) {
     weaponType,
     bossRoom: Boolean(player?.bossRoom ?? weapon?.bossRoom),
   });
+
+  // Apply drawing tendency modifiers to make combat experience differ based on drawing
+  const modifiedFinalStats = applyDrawingTendencyModifiers(finalStats, weapon);
+
   const relics = Array.isArray(buildState?.relics) ? [...buildState.relics] : [];
   return {
     weaponType,
     baseStats,
     relics,
-    finalStats,
-    weapon: createEffectiveAttackWeapon(weapon, weaponType, finalStats),
+    finalStats: modifiedFinalStats,
+    weapon: createEffectiveAttackWeapon(weapon, weaponType, modifiedFinalStats),
   };
+}
+
+// --- Drawing Tendency Modifiers ---
+// Modifies combat stats based on the drawing tendency stored in the weapon profile.
+// This makes the same weapon type feel different based on what the player drew.
+function applyDrawingTendencyModifiers(finalStats, weapon = null) {
+  const tendency = weapon?.drawingTendency;
+  if (!tendency || !tendency.type) {
+    return finalStats; // No tendency, return unchanged
+  }
+
+  const strength = clampNumber(tendency.strength ?? 0, 0, 1, 0);
+  if (strength <= 0) {
+    return finalStats;
+  }
+
+  // Create a copy to avoid mutating the original
+  const modified = { ...finalStats };
+
+  console.log("[DrawingTendencyModifier]", {
+    type: tendency.type,
+    strength,
+    before: { damage: finalStats.damage, range: finalStats.range, attackSpeed: finalStats.attackSpeed, crit: finalStats.crit },
+  });
+
+  switch (tendency.type) {
+    case "circular":
+      // Circular: large range, low damage, higher inspiration gain
+      modified.range = Math.round(modified.range * (1 + 0.2 * strength));
+      modified.damage = Math.round(modified.damage * (1 - 0.15 * strength));
+      modified.crit = modified.criticalChance = Math.max(modified.crit, modified.criticalChance) * (1 - 0.1 * strength);
+      // Inspiration gain multiplier is handled elsewhere (in combat feedback)
+      modified.inspirationGainMultiplier = 1 + 0.3 * strength;
+      break;
+
+    case "sharp":
+      // Sharp: high crit, high penetration, smaller range
+      modified.crit = modified.criticalChance = Math.min(0.95, Math.max(modified.crit, modified.criticalChance) * (1 + 0.5 * strength));
+      modified.pierce = Math.max(modified.pierce, 1 + Math.round(strength * 2));
+      modified.range = Math.round(modified.range * (1 - 0.15 * strength));
+      modified.damageVariance = (modified.damageVariance ?? 0) + 0.15 * strength;
+      break;
+
+    case "chaotic":
+      // Chaotic: high attack speed, random effects
+      modified.attackSpeed = modified.attackSpeed * (1 + 0.3 * strength);
+      modified.useTime = Math.max(1, Math.round(modified.useTime / (1 + 0.3 * strength)));
+      modified.damageVariance = (modified.damageVariance ?? 0) + 0.2 * strength;
+      // Random effect flag - handled in combat
+      modified.chaoticEffect = true;
+      modified.chaoticStrength = strength;
+      break;
+
+    case "longStraight":
+      // Long straight: long distance, thrust attack
+      modified.range = Math.round(modified.range * (1 + 0.4 * strength));
+      modified.knockback = modified.knockback * (1 + 0.2 * strength);
+      // Prefer thrust attack pattern if not already
+      if (modified.attackPattern !== "thrust") {
+        modified.preferThrust = strength > 0.5;
+      }
+      break;
+
+    default:
+      break;
+  }
+
+  console.log("[DrawingTendencyModifier]", {
+    type: tendency.type,
+    strength,
+    after: { damage: modified.damage, range: modified.range, attackSpeed: modified.attackSpeed, crit: modified.crit },
+  });
+
+  return modified;
 }
 
 function mergeWeaponStats(buildBaseStats, weapon = null) {

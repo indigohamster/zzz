@@ -4,7 +4,7 @@ import { classifyWeapon } from "./WeaponClassifier.js";
 import { applyWeaponModifiers, chooseModifierFromMetrics } from "./WeaponModifiers.js";
 import { normalizeWeaponType, weaponTypeToArchetypeId } from "./WeaponTypes.js?v=32";
 import { generateTraits } from "../features/drawing/TraitGenerator.js?v=25";
-import { analyzeDrawingShape } from "./ShapeAnalyzer.js?v=25";
+import { analyzeDrawingShape, calculateDrawingTendency } from "./ShapeAnalyzer.js?v=25";
 import { createWeaponProfile } from "./WeaponProfile.js?v=32";
 
 export function generateWeaponProfileFromDrawing({ imageDataUrl, strokes, metrics, investment }) {
@@ -16,6 +16,13 @@ export function generateWeaponProfileFromDrawing({ imageDataUrl, strokes, metric
     investmentScore: investment?.investmentScore ?? 0,
     hasSignature: false,
   });
+
+  // Calculate drawing tendency based on drawing shape
+  const drawingTendency = calculateDrawingTendency(safeMetrics);
+  if (drawingTendency.type) {
+    console.log("[DrawingTendency]", drawingTendency);
+  }
+
   return createWeaponProfile({
     archetypeId: archetype.id,
     imageDataUrl,
@@ -25,6 +32,7 @@ export function generateWeaponProfileFromDrawing({ imageDataUrl, strokes, metric
     traits: traitResult.traits,
     traitReasons: traitResult.reasons,
     modifiers: [modifier],
+    drawingTendency, // <-- Pass drawing tendency
   });
 }
 

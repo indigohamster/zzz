@@ -118,7 +118,18 @@ function rollWeaponDamage(baseDamage, weapon, random) {
   const critChance = clampNumber(stats.criticalChance ?? stats.crit, 0, 1, 0);
   const varianceScale = 1 + (random() * 2 - 1) * variance;
   const critical = random() < critChance;
-  const damage = Math.max(1, Math.round(baseDamage * varianceScale * (critical ? CRIT_MULTIPLIER : 1)));
+
+  // Apply chaotic tendency random effect
+  let chaoticMultiplier = 1;
+  if (stats.chaoticEffect && stats.chaoticStrength > 0) {
+    // Random multiplier between 0.7 and 1.3 (more extreme at higher strength)
+    const minMult = 0.7 - stats.chaoticStrength * 0.1;
+    const maxMult = 1.3 + stats.chaoticStrength * 0.1;
+    chaoticMultiplier = minMult + random() * (maxMult - minMult);
+    console.log("[ChaoticEffect]", { chaoticMultiplier, strength: stats.chaoticStrength });
+  }
+
+  const damage = Math.max(1, Math.round(baseDamage * varianceScale * chaoticMultiplier * (critical ? CRIT_MULTIPLIER : 1)));
   return { damage, critical };
 }
 

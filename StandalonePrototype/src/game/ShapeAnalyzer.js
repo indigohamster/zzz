@@ -120,5 +120,81 @@ function estimateComplexity(strokes, metrics) {
   return clampNumber(strokeCount / 8 + pointCount / 180 + overdraw / 120 + jitter / 5, 0, 1, 0);
 }
 
+// --- Drawing Tendency Calculation ---
+// Calculates which drawing tendency the player's drawing has.
+// Returns: { type: string, strength: number (0-1) }
+export function calculateDrawingTendency(metrics = {}) {
+  const closedness = clampNumber(metrics.closedness ?? metrics.closedShapeScore ?? 0, 0, 1, 0);
+  const pointedness = clampNumber(metrics.pointedness ?? 0, 0, 1, 0);
+  const complexity = clampNumber(metrics.complexity ?? 0, 0, 1, 0);
+  const aspectRatio = clampNumber(metrics.aspectRatio ?? 1, 0.05, 20, 1);
+  const symmetry = clampNumber(metrics.symmetryScore ?? 0, 0, 1, 0);
+
+  // Calculate tendency scores (0-1 each)
+  const scores = {
+    circular: calculateCircularScore(closedness, complexity, symmetry),
+    sharp: calculateSharpScore(pointedness, closedness, complexity),
+    chaotic: calculateChaoticScore(complexity, closedness, symmetry),
+    longStraight: calculateLongStraightScore(aspectRatio, complexity, pointedness),
+  };
+
+  // Find the strongest tendency
+  let bestType = "circular";
+  let bestScore = scores.circular;
+
+  for (const [type, score] of Object.entries(scores)) {
+    if (score > bestScore) {
+      bestType = type;
+      bestScore = score;
+    }
+  }
+
+  // If no clear tendency (all scores < 0.3), return null
+  if (bestScore < 0.3) {
+    return { type: null, strength: 0 };
+  }
+
+  return {
+    type: bestType,
+    strength: Math.round(bestScore * 100) / 100, // Round to 2 decimal places
+  };
+}
+
+function calculateCircularScore(closedness, complexity, symmetry) {
+  // Circular: high closedness, moderate complexity, some symmetry
+  const closednessScore = closedness * 0.6;
+  const complexityPenalty = complexity > 0.7 ? (complexity - 0.7) * 0.3 : 0;
+  const symmetryBonus = symmetry * 0.1;
+  return Math.max(0, Math.min(1, closednessScore - complexityPenalty + symmetryBonus));
+}
+
+function calculateSharpScore(pointedness, closedness, complexity) {
+  // Sharp: high pointedness, low closedness, low complexity
+  const pointednessScore = pointedness * 0.7;
+  const closednessPenalty = closedness > 0.5 ? (closedness - 0.5) * 0.3 : 0;
+  const complexityPenalty = complexity > 0.6 ? (complexity - 0.6) * 0.2 : 0;
+  return Math.max(0, Math.min(1, pointednessScore - closednessPenalty - complexityPenalty));
+}
+
+function calculateChaoticScore(complexity, closedness, symmetry) {
+  // Chaotic: high complexity, low closedness, low symmetry
+  const complexityScore = complexity * 0.6;
+  const closednessPenalty = closedness > 0.4 ? (closedness - 0.4) * 0.25 : 0;
+  const symmetryPenalty = symmetry > 0.5 ? (symmetry - 0.5) * 0.15 : 0;
+  return Math.max(0, Math.min(1, complexityScore - closednessPenalty - symmetryPenalty));
+}
+
+function calculateLongStraightScore(aspectRatio, complexity, pointedness) {
+  // Long straight: extreme aspect ratio, low complexity, some pointedness
+  const ratio = aspectRatio;
+  const isLong = ratio >= 2.5;
+  const isTall = ratio <= 0.4;
+  const ratioScore = isLong || isTall ? 0.5 : 0;
+  const extremityBonus = isLong ? Math.min(0.3, (ratio - 2.5) * 0.05) : isTall ? Math.min(0.3, (0.4 - ratio) * 0.1) : 0;
+  const complexityPenalty = complexity > 0.5 ? (complexity - 0.5) * 0.3 : 0;
+  const pointednessBonus = pointedness * 0.1;
+  return Math.max(0, Math.min(1, ratioScore + extremityBonus - complexityPenalty + pointednessBonus));
+}
+
 
 
