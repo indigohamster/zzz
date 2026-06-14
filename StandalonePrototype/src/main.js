@@ -1,4 +1,4 @@
-﻿import { H, W } from "./core/config.js?v=25";
+import { H, W } from "./core/config.js?v=25";
 import { drawPaperBackground, label } from "./core/render.js?v=25";
 import { createDrawingCanvas } from "./features/drawing/DrawingCanvas.js?v=25";
 import { drawWeaponResultPanel, weaponResultEnterButton } from "./features/drawing/WeaponResultPanel.js?v=25";
@@ -9,6 +9,7 @@ import { generateRelicChoices } from "./game/builds/RewardGenerator.js?v=32";
 import { getWeaponTypeFromProfile } from "./game/builds/WeaponArchetypes.js?v=32";
 import { createInkwellScene } from "./scenes/inkwell.js?v=36";
 import { createOpeningScene } from "./scenes/OpeningScene.js";
+import { createChapter0Scene } from "./scenes/Chapter0.js?v=1";
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -23,7 +24,7 @@ const pointerInput = {
   lastLogKey: "",
 };
 
-let scene = "opening";
+let scene = "chapter0";
 let frame = 0;
 
 const drawPanel = { x: 86, y: 92, w: 420, h: 330 };
@@ -80,6 +81,14 @@ const openingScene = createOpeningScene({
   onDone: () => { scene = "studio"; },
 });
 window.DEBUG_SET_WEAPON_TYPE = setDebugWeaponType;
+const chapter0Scene = createChapter0Scene({
+  canvas,
+  ctx,
+  keys,
+  mouse,
+  gameState,
+  onDone: () => { scene = "studio"; },
+});
 
 function clearDrawing() {
   drawingCanvas.clear();
@@ -346,6 +355,7 @@ function drawFeedback() {
 }
 
 function update() {
+  if (scene === "chapter0") chapter0Scene.update();
   if (scene === "opening") openingScene.update();
   if (scene === "studio") updateDrawing();
   if (scene === "inkwell") inkwell.update();
@@ -353,6 +363,7 @@ function update() {
 
 function draw() {
   if (scene === "opening") openingScene.draw();
+  if (scene === "chapter0") chapter0Scene.draw();
   if (scene === "studio") drawStudio();
   if (scene === "inkwell") inkwell.draw();
   if (scene === "feedback") drawFeedback();
@@ -371,7 +382,7 @@ function loop() {
   }
 }
 
-openingScene.start();
+chapter0Scene.start();
 clearDrawing();
 loop();
 
@@ -401,6 +412,7 @@ window.addEventListener("keydown", (event) => {
     return;
   }
   keys.add(key);
+  if (scene === "chapter0") { chapter0Scene.handleKey(key); return; }
   if (scene === "opening") { openingScene.handleKey(key); return; }
   if (scene === "inkwell") inkwell.handleKey(key);
   if (key === "p" && scene === "studio") setDrawingTool("pencil");
@@ -462,6 +474,7 @@ function handlePrimaryDown(event) {
   canvas.setPointerCapture?.(event.pointerId);
 
   if (event.button === 0 || event.pointerType === "touch" || event.pointerType === "pen") {
+    if (scene === "chapter0") { chapter0Scene.handleClick(); return; }
     if (scene === "opening") { openingScene.handleClick(); return; }
     if (scene === "studio" && !drawingComplete) {
       const toolButton = drawingToolButtons.find((button) => pointInRect(mouse.x, mouse.y, button));

@@ -5,40 +5,58 @@
 ## 最近一次修改
 
 ### 本次目标
-新增 OpeningScene 开场场景，让玩家了解主角身份、为什么进入墨境、为什么墨点会跟随自己。
+新增 Chapter0 序章场景，作为游戏的新入口体验。同时完成项目梳理阶段，生成 4 份核心设计文档。
 
-### 修改文件
-- /StandalonePrototype/src/scenes/OpeningScene.js（新文件）
-- /StandalonePrototype/src/main.js（集成 opening 场景）
-- /docs/AI_HANDOFF.md
-- /docs/TODO_QUEUE.md
+### 修改/新增文件
+**新增：**
+- `/StandalonePrototype/src/scenes/Chapter0.js` — 序章场景（17428 bytes）
+- `/docs/Mojing_GDD.md` — 核心游戏设计文档
+- `/docs/PlayerLoop.md` — 玩家一日循环文档
+- `/docs/WorldStructure.md` — 完整世界结构文档
+- `/docs/DevelopmentRoadmap.md` — 开发路线图
+
+**更新：**
+- `/StandalonePrototype/src/main.js` — 集成 Chapter0 场景，默认入口改为 chapter0
+- `/StandalonePrototype/index.html` — 版本号更新 v33→v34，移除 BOM
+- `/docs/PROJECT_STATE.md` — 更新项目状态
+- `/docs/AI_HANDOFF.md` — 本文件
+
+**辅助脚本（根目录）：**
+- `fix_c0.py` / `rebuild_c0.py` / `rebuild_c0_p2.py` / `rebuild_c0_p3.py` — 用于修复/重建 Chapter0.js 的 Python 脚本
 
 ### 核心改动
-- 新增 OpeningScene 模块，管理 5 个叙事阶段：commute（下班路上）、arrive（到家）、studio（工作室）、inkdot（墨点出现）、portal（墨境入口开启）
-- 每个阶段有独立的背景渲染（城市夜景、走廊、工作室、墨点发光、传送门漩涡）和逐字浮现的叙事文本
-- 支持 Enter/空格/点击 跳过阶段，也支持自动播放完整个叙事
-- main.js 新增 "opening" 场景状态，在 opening 结束后自动转入 "studio"
+- Chapter0 场景：可探索的租房房间，包含 4 个可调查物品（电脑桌、数字板、散落稿件、旧画册），按 E 调查触发对话，依次经历 EXPLORE → SKETCHBOOK → INKDOT → INK_SPREAD → INK_ENTRY → FADE_OUT 6 个阶段
+- 墨点对话首次有了中文语音文本（"好久不见"、"你还好吗"、"这里还是老样子"）
+- 场景流变更为 chapter0 → studio → inkwell → feedback（opening 场景保留但非默认入口）
+- 项目梳理阶段完成：从现有代码中归纳出世界观、玩家循环、世界结构、开发路线
 
 ### 当前状态
-- 已完成：OpeningScene 创建与集成
-- 待验证：浏览器实测开场流程是否完整、文本渲染是否正常
+- 已完成：Chapter0 创建与集成，4 份设计文档写入
+- 待验证：Chapter0 在浏览器中的完整流程、中文文本渲染是否正常
 
 ### 测试方法
-启动 dev server 后访问 http://127.0.0.1:4173，观察开场 5 个阶段的视觉与文本是否正确呈现，按 Enter 或点击应能跳过/推进阶段，最后应自动转入 studio 场景。
+启动 dev server 后访问 http://127.0.0.1:4173，应直接进入 chapter0 场景：
+1. WASD/方向键 移动角色
+2. 靠近物品按 E/Enter 调查
+3. 调查旧画册 → 墨点出现对话 → 墨迹扩散 → 自动过渡到 studio
 
 ### 风险点
-- OpeningScene 使用纯 Canvas 2D 绘制，未使用 Three.js 或其他库
-- 文本使用中文字符，需确保页面编码为 UTF-8
-- 逐字浮现的文本速率可能需要微调（当前 2.5 字符/帧）
+- Chapter0.js 的 Python 重建脚本使用 unicode escape 编码中文，文件本身为合法 UTF-8
+- Chapter0 当前无音频，所有叙事为文本+Canvas 绘制
+- 场景流中 opening 场景仍存在但不会被默认触发（可通过修改 main.js 恢复）
+- 根目录的 4 个 Python 脚本是临时修复工具，后续可清理
 
 ### 下一个 AI 接手建议
 优先处理：
-1. 浏览器实测 OpeningScene 的完整流程
-2. 根据体验微调文本浮现速率和阶段时长
+1. 浏览器实测 Chapter0 完整流程（调查→对话→墨迹扩散→过渡）
+2. 验证 Chapter0 → studio 场景切换正常
 3. 继续 P1-1（武器攻击动画差异）或其他 P1 任务
+4. 如果 Chapter0 流程无误，可清理根目录的 Python 修复脚本
 
 接手前仍需先阅读：
 1. /docs/PROJECT_STATE.md
 2. /docs/DESIGN_RULES.md
 3. /docs/TODO_QUEUE.md
 4. /docs/BUG_LOG.md
+5. /docs/Mojing_GDD.md（世界观总纲）
+6. /docs/DevelopmentRoadmap.md（优先级路线图）
