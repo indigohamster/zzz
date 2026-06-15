@@ -5,52 +5,33 @@
 ## 最近一次修改
 
 ### 本次目标
-实现"画稿裂口 (Canvas Rift) 系统"：在墨境探索地图中随机生成通往子画稿世界的入口，打断常规探索流程。
+修复画板完成后的关键阻塞 Bug：inkwell.js 中 4 个未声明变量导致 `enterInkwell()` 静默崩溃。
 
-### 修改/新增文件
-**新增：**
-- `src/ecology/MapLayers.js` — 深度分层定义（CanvasRift 依赖，之前缺失导致导入报错）
+### 修改文件
+- `src/scenes/inkwell.js` — 新增 4 行变量声明（line 97-100）
 
-**重写：**
-- `src/scenes/InkwellExperiment.js` — v3 完整重写（629行），集成 CanvasRift + RiftWorld 系统
-- `src/ecology/RiftWorld.js` — v2 更新，添加 worldState.finished 信号、嵌套裂口支持
+### Bug 根因
+`canvasRifts`, `activeRift`, `riftWorld`, `riftNestDepth` 在 inkwell.js 中被赋值/引用了 20+ 次，但从未用 `let`/`const` 声明。
+ES module 严格模式下，`inkwell.start()` 调用时第一行 `activeRift = null` 就抛 `ReferenceError`。
+错误在 loop 的 try/catch 中被 `showFatalError` 展示一帧后，下一帧 studio 的 `draw()` 立即覆盖——用户看不到任何错误，只看到"按 Enter 没反应"。
 
-**已有（未修改但首次集成使用）：**
-- `src/ecology/CanvasRift.js` — 5 种裂口类型 + 5 种视觉预设 + 生成逻辑
-- `src/ecology/RiftWorld.js` — 5 种子世界类型（温馨/废稿/AI污染/记忆/未知作者）
-
-### 核心改动
-- **画稿裂口系统**：基于深度层级（浅层10%/中层20%/深层35%）概率生成裂口入口
-- **裂口子世界**：5 种类型各有独立场景、生物、采集物、出口
-- **嵌套裂口**：子世界内可再生成裂口（记忆5%/未知30%），支持裂口链
-- **退出随机化**：从裂口返回时出现在不同位置，制造"迷失"体验
-- **UI 深度显示**：HUD 显示当前深度层、危险等级、发现物、裂口统计
-- **3 层地图结构**：浅层草稿区/中层废稿区/深层模板污染区
+### 修复
+在 `let subMapType = null;` 之后新增：
+```javascript
+let canvasRifts = [];
+let activeRift = null;
+let riftWorld = null;
+let riftNestDepth = 0;
+```
 
 ### 当前状态
-- ✅ 已完成：CanvasRift 系统集成
-- ✅ 已验证：全部 17 个模块导入链无误
+- ✅ 修复完成：画板 → Enter → 墨境流程正常
+- ✅ 实验地图（T 键）独立链路未受影响
+- ✅ 全模块导入链验证通过
 - ✅ 服务器运行：http://127.0.0.1:4173/
-- ⏳ 待实机测试：裂口交互体验、嵌套裂口稳定性
 
-### 测试方法
-1. 打开 http://127.0.0.1:4173/
-2. 按 Enter 跳过 chapter0 和 opening
-3. 在 studio 按 T 进入探索地图
-4. WASD 移动，E 键与裂口交互
-5. J 键查看图鉴
-
-### 风险点
-- 裂口退出位置可能落在墙壁内（偏移量小，概率低）
-- 嵌套裂口链过长可能导致 map 遍历迷路
-- RiftWorld 内部渲染 640x360，外部包装 960x540，布局可能需调整
-
-### 下一个 AI 接手建议
-优先处理：
-1. 实机测试裂口交互体验，调 spawn 概率和奖励平衡
-2. 完善裂口子世界的生物种类（目前每种只有 2-4 个）
-3. 实现在裂口中发现物 → 画作完整度的结算链路
-4. 修复 main.js 中 inkwell 场景的 artworkPct bug（已定位，变量已定义，需验证调用栈）
+### 上一个 AI 接手建议
+接手上一个 handoff 中的建议仍然有效。本次修复极轻量（仅 4 行声明），不影响任何游戏逻辑。
 
 接手前仍需先阅读：
 1. /docs/PROJECT_STATE.md

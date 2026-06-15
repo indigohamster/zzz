@@ -1,4 +1,4 @@
-﻿import { H, TILE, W, WORLD_H, WORLD_W } from "../core/config.js";
+import { H, TILE, W, WORLD_H, WORLD_W } from "../core/config.js";
 import { label } from "../core/render.js";
 import { drawInkwellBackground } from "../inkwell/Background.js";
 import { drawInkwellLighting } from "../inkwell/Lighting.js";
@@ -94,6 +94,10 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
   let canvasGates = [];
   let subMapScene = null;  // ????????
   let subMapType = null;   // ?????
+  let canvasRifts = [];
+  let activeRift = null;
+  let riftWorld = null;
+  let riftNestDepth = 0;
 
   
   function spawnRiftsOnMap() {
