@@ -11,6 +11,8 @@ import { createInkwellScene } from "./scenes/inkwell.js?v=36";
 import { createOpeningScene } from "./scenes/OpeningScene.js";
 import { createChapter0Scene } from "./scenes/Chapter0.js?v=1";
 import { createShopState, buyShopItem, getAllShopItems, getCategories, getItemsByCategory } from "./game/ShopSystem.js";
+import { createInkwellExperiment } from "./scenes/InkwellExperiment.js";
+import { getStatusDescription } from "./game/WorkEvents.js";
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -90,6 +92,16 @@ const chapter0Scene = createChapter0Scene({
   mouse,
   gameState,
   onDone: () => { scene = "studio"; },
+});
+const inkwellExperiment = createInkwellExperiment({
+  keys,
+  mouse,
+  weapon: gameState.currentWeapon,
+  getFrame: () => frame,
+  onFinish: (result) => {
+    scene = "studio";
+    console.log("[Experiment]", result);
+  },
 });
 
 function clearDrawing() {
@@ -210,6 +222,8 @@ function finishInkwellRun(run) {
   const m = weapon.metrics || { seconds: 0, revisions: 0, overdraw: 0, jitter: 0 };
   const exhaustion = run.overtimeCount * 6 + (run.allNighter ? 18 : 0);
   const soul = Math.round(m.seconds * 1.5 + m.revisions * 2 + run.kills * 8 + run.mined * 0.4 + m.overdraw * 0.12 - exhaustion);
+  const artworkPct = Math.min(100, (run.artworkCompletion || 0) + run.kills * 2 + run.itemsCollected * 3 + run.materialsCollected);
+  const artworkDisc = (run.artworkDiscoveries || 0) + run.kills + run.itemsCollected;
   const commercial = Math.round(run.kills * 8 + run.mined * 0.25 + run.attacks * 0.8 + run.overtimeCount * 4 - run.hitsTaken * 0.15);
 
   feedback = {
@@ -217,6 +231,7 @@ function finishInkwellRun(run) {
     draft: makeDraftLine(m, run),
     boss: makeBossLine(commercial, run),
     cat: makeCatLine(soul, run),
+    artwork: artworkPct > 0 ? `Artwork completion: ${artworkPct}% (${artworkDisc} discoveries)` : "",
   };
   dayCycle.setPhase("settlement");
   scene = "feedback";
@@ -236,6 +251,7 @@ function makeDraftLine(metrics, run) {
   if (run.kills >= 3) return `The draft becomes a tense action piece. ${weapon.name} cuts through the center of the page.`;
   if (run.mined > 18) return `The draft is quiet and dense with scenery. You spent ${minutes} minutes digging for a shape.`;
   if (metrics.revisions > 8) return "The draft has many corrected lines. None of them are clean, but they feel chosen.";
+  if (run.finishReason === "retreat") return "The draft stops where you chose to stop. Not because time ran out, but because you decided what was enough for tonight.";
   return "The draft is small, unfinished, and alive enough to bother you.";
 }
 
@@ -247,6 +263,7 @@ function makeBossLine(commercial, run) {
   if (run.finishReason === "deadline") return "Zhou: You stopped at the right second, or the wrong one. Hard to tell. But it has urgency.";
   if (run.finishReason === "clear") return "Zhou: This one reads immediately. Strong silhouette, clear action.";
   if (commercial > 28) return "Zhou: This has movement. Keep this direction.";
+  if (run.finishReason === "retreat") return "Zhou: You came back early. Smart. A living artist knows when to stop.";
   return "Zhou: It is rough. Next time, use more reference.";
 }
 
@@ -258,6 +275,7 @@ function makeCatLine(soul, run) {
   if (run.finishReason === "deadline") return "Inkdot paws at the corner of the page. It seems to like that you did not smooth over the unfinished part.";
   if (run.finishReason === "ink") return "Inkdot presses close to the dry brush marks. The room smells like paper dust.";
   if (soul > 38) return "Inkdot is brighter than yesterday. It remembers the line you kept redrawing.";
+  if (run.finishReason === "retreat") return "Inkdot meets you at the edge of the page. It seems glad you knew when to come home.";
   return "Inkdot curls near the paper. The room feels a little pale.";
 }
 
@@ -413,7 +431,6 @@ function drawWorkPhase() {
   
   // 绘制当前状态
   yPos += 20;
-  const { getStatusDescription } = require("./game/WorkEvents.js");
   const statusDesc = getStatusDescription(gameState.status);
   ctx.fillStyle = "#8d1d25";
   ctx.font = "bold 16px Segoe UI, Microsoft YaHei, sans-serif";
@@ -484,7 +501,7 @@ function updateShop() {
   if (keys.has("escape")) {
     keys.delete("escape");
     shopState = null;
-    scene = "free";
+    scene = "studio";
   }
   
   // 消息计时器
@@ -588,6 +605,8 @@ function drawFeedback() {
   label(ctx, feedback.draft, 70, 134, 18);
   label(ctx, feedback.boss, 70, 188, 18);
   label(ctx, feedback.cat, 70, 242, 18);
+  if (feedback.artwork) label(ctx, feedback.artwork, 70, 294, 16, "#c9a846");
+  // artwork completion displayed via feedback.artwork above
 
   ctx.fillStyle = "#1f1e1c";
   ctx.fillRect(70, 310, 560, 92);
@@ -604,6 +623,7 @@ function update() {
   if (scene === "inkwell") inkwell.update();
   if (scene === "work") updateWorkPhase();
   if (scene === "shop") updateShop();
+  if (scene === "experiment") inkwellExperiment.update();
 }
 
 function draw() {
@@ -614,6 +634,7 @@ function draw() {
   if (scene === "feedback") drawFeedback();
   if (scene === "work") drawWorkPhase();
   if (scene === "shop") drawShop();
+  if (scene === "experiment") inkwellExperiment.draw();
 }
 
 function loop() {
@@ -662,10 +683,17 @@ window.addEventListener("keydown", (event) => {
   if (scene === "chapter0") { chapter0Scene.handleKey(key); return; }
   if (scene === "opening") { openingScene.handleKey(key); return; }
   if (scene === "inkwell") inkwell.handleKey(key);
+  if (scene === "experiment") { inkwellExperiment.handleKey(key); return; }
   if (key === "p" && scene === "studio") setDrawingTool("pencil");
   if (key === "e" && scene === "studio") setDrawingTool("eraser");
   if (key === "r" && scene === "studio") clearDrawing();
+  if (key === "enter" && scene === "experiment") { inkwellExperiment.handleKey("enter"); return; }
   if (key === "enter" && scene === "studio" && drawingCanvas.hasEnoughPoints()) enterInkwell();
+  if (key === "t" && scene === "studio") {
+    inkwellExperiment.start();
+    scene = "experiment";
+    return;
+  }
   if (key === "s" && scene === "studio") {
     shopState = createShopState();
     scene = "shop";

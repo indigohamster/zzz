@@ -1,4 +1,5 @@
 import { Tile, WORLD_H, WORLD_W } from "../core/config.js";
+import { MAP_LAYERS, rollRoomTypes } from "./MapLayers.js";
 import { hash01, smoothNoise } from "./Noise.js";
 
 const TUNNEL_HALF_HEIGHT = 5;
@@ -8,11 +9,11 @@ const VERTICAL_CLEAR_HALF_WIDTH = 3;
 export function generateInkwellWorld(tileMap) {
   clearWorld(tileMap);
   fillDungeonMass(tileMap);
-  const rooms = createDungeonRooms();
+  const rooms = createLayeredRooms();
   carveRooms(tileMap, rooms);
   addRoomDetails(tileMap, rooms);
   reinforceMainRoute(tileMap, rooms);
-  connectRooms(tileMap, rooms);
+  connectLayeredRooms(tileMap, rooms);
   addInkVeins(tileMap);
   ensureRoomConnections(tileMap, rooms);
   tileMap.setRooms(rooms);
@@ -36,31 +37,130 @@ function fillDungeonMass(tileMap) {
   }
 }
 
-function createDungeonRooms() {
+function createLayeredRooms() {
   const rooms = [];
-  const middleTypes = ["combat", "treasure", "resource", "combat", "rift", "combat", "treasure"];
-  const middleCount = 11 + Math.floor(Math.random() * 8);
-  let x = 24;
-  let y = 54 + Math.floor(Math.random() * 30);
+  const worldWidth = WORLD_W;
+  const margin = 20;
 
-  rooms.push(makeRoom("entrance", x, y, 62, 32));
-  x += 88;
+  // === ENTRANCE: top-center ===
+  const entX = Math.floor(worldWidth / 2 - 30);
+  rooms.push(makeRoom("entrance", entX, 6, 60, 22));
+  rooms.push(makeRoom("exit", entX + 45, 5, 16, 14));
 
-  for (let i = 0; i < middleCount; i++) {
-    const type = middleTypes[Math.floor(Math.random() * middleTypes.length)];
-    const w = type === "rift" ? 50 + Math.floor(Math.random() * 22) : type === "treasure" ? 46 + Math.floor(Math.random() * 18) : 62 + Math.floor(Math.random() * 30);
-    const h = type === "rift" ? 58 + Math.floor(Math.random() * 28) : 32 + Math.floor(Math.random() * 20);
-    y = Math.max(28, Math.min(WORLD_H - h - 18, y + Math.floor(Math.random() * 43) - 21));
-    rooms.push(makeRoom(type, x, y, w, h));
-    x += w + 28 + Math.floor(Math.random() * 34);
-    if (x > WORLD_W - 150) break;
+  // === Build layers ===
+  for (const layer of MAP_LAYERS) {
+    const [yMin, yMax] = layer.yRange;
+    const roomCount = layer.minRooms + Math.floor(Math.random() * (layer.maxRooms - layer.minRooms + 1));
+    const types = rollRoomTypes(layer, roomCount);
+
+    // Spread rooms across the width
+    const usableWidth = worldWidth - margin * 2;
+    const spacing = usableWidth / (roomCount + 1);
+
+    for (let i = 0; i < roomCount; i++) {
+      const type = types[i];
+      const w = type === "danger" ? 42 + Math.floor(Math.random() * 18)
+              : type === "event"  ? 36 + Math.floor(Math.random() * 16)
+              : type === "shop"   ? 30 + Math.floor(Math.random() * 12)
+              : 44 + Math.floor(Math.random() * 24);
+      const h = type === "danger" ? 28 + Math.floor(Math.random() * 14)
+              : type === "event"  ? 22 + Math.floor(Math.random() * 12)
+              : 20 + Math.floor(Math.random() * 14);
+
+      const rx = margin + Math.floor(spacing * (i + 1) - w / 2 + (Math.random() - 0.5) * spacing * 0.4);
+      const ry = yMin + Math.floor(Math.random() * (yMax - yMin - h));
+      rooms.push(makeRoom(type, Math.max(4, Math.min(worldWidth - w - 4, rx)), ry, w, h));
+    }
   }
 
-  const bossW = 86 + Math.floor(Math.random() * 34);
-  const bossH = 46 + Math.floor(Math.random() * 26);
-  y = Math.max(30, Math.min(WORLD_H - bossH - 18, y + Math.floor(Math.random() * 37) - 18));
-  rooms.push(makeRoom("boss", Math.min(x, WORLD_W - bossW - 20), y, bossW, bossH));
+  // === BOSS: bottom ===
+  const bossW = 72 + Math.floor(Math.random() * 30);
+  const bossH = 40 + Math.floor(Math.random() * 20);
+  const bossX = Math.floor(worldWidth / 2 - bossW / 2);
+  rooms.push(makeRoom("boss", Math.max(10, bossX), WORLD_H - bossH - 12, bossW, bossH));
+
   return rooms;
+}
+
+function connectLayeredRooms(tileMap, rooms) {
+  // Connect entrance to shallow rooms via vertical shafts
+  const entrance = rooms.find(r => r.type === "entrance");
+  const boss = rooms.find(r => r.type === "boss");
+
+  if (entrance) {
+    // Carve a main vertical shaft from entrance downward
+    const shaftX = Math.floor(entrance.x + entrance.w / 2);
+    const shaftW = 11;
+    for (let y = entrance.y + entrance.h; y < WORLD_H - 16; y++) {
+      for (let xx = shaftX - shaftW; xx <= shaftX + shaftW; xx++) {
+        tileMap.setTile(xx, y, Tile.Air);
+      }
+      // Occasional ledge
+      if (y % 18 === 0) {
+        for (let xx = shaftX - shaftW; xx <= shaftX + shaftW; xx++) {
+          tileMap.setTile(xx, y, Tile.Paper);
+        }
+        for (let xx = shaftX - 3; xx <= shaftX + 3; xx++) {
+          tileMap.setTile(xx, y, Tile.Air);
+        }
+      }
+    }
+  }
+
+  // Connect each room to the main shaft via horizontal tunnels
+  for (const room of rooms) {
+    if (room.type === "entrance" || room.type === "exit") continue;
+    const ry = Math.floor(room.y + room.h / 2);
+    const shaftX = entrance ? Math.floor(entrance.x + entrance.w / 2) : Math.floor(WORLD_W / 2);
+
+    // Horizontal tunnel from room to shaft
+    if (room.x > shaftX) {
+      carveHorizontalTunnel(tileMap, shaftX, room.x - 2, ry);
+    } else {
+      carveHorizontalTunnel(tileMap, room.x + room.w + 2, shaftX, ry);
+    }
+
+    // Open room door on the shaft side
+    const doorX = room.x > shaftX ? room.x : room.x + room.w - 1;
+    for (let yy = ry - 5; yy <= ry + 5; yy++) {
+      for (let xx = doorX - 2; xx <= doorX + 2; xx++) {
+        tileMap.setTile(xx, yy, Tile.Air);
+      }
+    }
+  }
+
+  // Boss connection
+  if (boss && entrance) {
+    const by = Math.floor(boss.y + boss.h / 2);
+    const shaftX = Math.floor(entrance.x + entrance.w / 2);
+    for (let y = by - 3; y < boss.y + boss.h; y++) {
+      for (let xx = shaftX - 5; xx <= shaftX + 5; xx++) {
+        if (tileMap.tileAt(xx, y) !== Tile.Air) tileMap.setTile(xx, y, Tile.Air);
+      }
+    }
+    carveHorizontalTunnel(tileMap, shaftX, boss.x + Math.floor(boss.w / 2), by);
+    // Boss door
+    for (let yy = by - 3; yy <= by + 3; yy++) {
+      for (let xx = boss.x - 2; xx <= boss.x + 2; xx++) {
+        tileMap.setTile(xx, yy, Tile.Air);
+      }
+    }
+  }
+
+  // Add scattered vertical shortcuts between layers
+  for (const room of rooms) {
+    if (room.type === "entrance" || room.type === "exit" || room.type === "boss") continue;
+    if (Math.random() < 0.25) {
+      const vx = Math.floor(room.x + room.w / 2 + (Math.random() - 0.5) * room.w * 0.5);
+      const startY = room.y + room.h;
+      const endY = Math.min(WORLD_H - 10, startY + 30 + Math.floor(Math.random() * 50));
+      for (let y = startY; y <= endY; y++) {
+        for (let xx = vx - 3; xx <= vx + 3; xx++) {
+          if (tileMap.tileAt(xx, y) !== Tile.Air && Math.random() < 0.7) tileMap.setTile(xx, y, Tile.Air);
+        }
+      }
+    }
+  }
 }
 
 function makeRoom(type, x, y, w, h) {

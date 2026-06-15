@@ -1,0 +1,28 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>墨境生态 Demo — Inkwell Ecosystem</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a1816;
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+    #game { border: 2px solid #3a3630; cursor: crosshair; }
+    #info {
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      color: #8b8173; font-size: 13px; text-align: center;
+      background: rgba(26,24,22,0.85); padding: 8px 20px; border-radius: 6px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game" width="960" height="540"></canvas>
+  <div id="info">WASD 移动 | 1-5 切换工具 | E 观察 | R 记录 | F 捕获/净化 | J 图鉴 | 空格 攻击</div>
+  <script src="./src/ecology/demo_main.js?v=1" type="module"></script>
+</body>
+</html>

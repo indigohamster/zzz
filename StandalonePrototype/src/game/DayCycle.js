@@ -1,7 +1,9 @@
+import { selectWorkEvents, applyWorkEventEffects } from "./WorkEvents.js";
+
 const PHASES = ["morning", "work", "free", "inkwell", "settlement"];
 
 export function createDayCycle(gameState) {
-  let currentWorkEvents = [];  // 当前 work 阶段触发的事件列表
+  let currentWorkEvents = [];  // 当前 work 阶段触发的事件列�?
   let currentEventIndex = 0;  // 当前事件索引
 
   function setPhase(phase) {
@@ -10,7 +12,6 @@ export function createDayCycle(gameState) {
     
     // 进入 work 阶段时，生成工作事件
     if (phase === "work") {
-      const { selectWorkEvents } = require("./WorkEvents.js");
       currentWorkEvents = selectWorkEvents(gameState);
       currentEventIndex = 0;
       console.log(`[DayCycle] Entering work phase, ${currentWorkEvents.length} events generated`);
@@ -26,7 +27,7 @@ export function createDayCycle(gameState) {
   }
 
   /**
-   * 获取当前 work 阶段的事件
+   * 获取当前 work 阶段的事�?
    */
   function getCurrentWorkEvent() {
     if (gameState.phase !== "work") return null;
@@ -35,26 +36,25 @@ export function createDayCycle(gameState) {
   }
 
   /**
-   * 完成当前事件，进入下一个事件
+   * 完成当前事件，进入下一个事�?
    * @returns {boolean} 是否还有更多事件
    */
   function advanceWorkEvent() {
     if (gameState.phase !== "work") return false;
     
-    // 应用当前事件的效果
+    // 应用当前事件的效�?
     const currentEvent = currentWorkEvents[currentEventIndex];
     if (currentEvent) {
-      const { applyWorkEventEffects } = require("./WorkEvents.js");
       applyWorkEventEffects(gameState, currentEvent);
     }
     
-    // 进入下一个事件
+    // 进入下一个事�?
     currentEventIndex++;
     
     // 如果所有事件都完成了，自动进入 free 阶段
     if (currentEventIndex >= currentWorkEvents.length) {
       setPhase("free");
-      return false; // 没有更多事件了
+      return false; // 没有更多事件�?
     }
     
     return true; // 还有更多事件

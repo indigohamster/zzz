@@ -24,6 +24,7 @@ export function createNpcManager({ physics, player, run, tileMap, combat, gameSt
       if (room.type === "combat") spawnInRoom(room, 1 + Math.floor(Math.random() * 3), 36, false);
       if (room.type === "resource" && Math.random() > 0.35) spawnInRoom(room, 1, 32, false);
       if (room.type === "rift") spawnInRoom(room, 1 + Math.floor(Math.random() * 2), 44, false);
+      if (room.type === "danger") spawnInRoom(room, 2 + Math.floor(Math.random() * 2), 52, false);
       if (room.type === "boss") spawnBoss(room);
     }
   }

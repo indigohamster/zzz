@@ -1,71 +1,59 @@
-# AI Handoff
+﻿# AI Handoff
 
 > 每次 AI 修改项目后，都必须更新本文件。
 
 ## 最近一次修改
 
 ### 本次目标
-实现"绘制倾向系统"：让绘制内容真正影响战斗体验，而不仅仅是改变武器类型。
+实现"画稿裂口 (Canvas Rift) 系统"：在墨境探索地图中随机生成通往子画稿世界的入口，打断常规探索流程。
 
 ### 修改/新增文件
 **新增：**
-- `src/game/ShapeAnalyzer.js` — 新增 `calculateDrawingTendency(metrics)` 函数，基于绘制指标计算 4 种倾向
-- `绘制倾向系统-修改报告.md` — 详细修改报告
-- `绘制倾向系统-测试方法.md` — 完整测试方法文档
+- `src/ecology/MapLayers.js` — 深度分层定义（CanvasRift 依赖，之前缺失导致导入报错）
 
-**更新：**
-- `src/game/WeaponProfile.js` — 新增 `drawingTendency` 字段
-- `src/game/WeaponGenerator.js` — 生成武器时计算并传递倾向
-- `src/inkwell/AttackController.js` — 战斗时应用倾向修正
-- `src/inkwell/CombatSystem.js` — 实现混乱倾向的随机伤害效果
-- `AI_HANDOFF.md` — 本文件（根目录版本）
+**重写：**
+- `src/scenes/InkwellExperiment.js` — v3 完整重写（629行），集成 CanvasRift + RiftWorld 系统
+- `src/ecology/RiftWorld.js` — v2 更新，添加 worldState.finished 信号、嵌套裂口支持
+
+**已有（未修改但首次集成使用）：**
+- `src/ecology/CanvasRift.js` — 5 种裂口类型 + 5 种视觉预设 + 生成逻辑
+- `src/ecology/RiftWorld.js` — 5 种子世界类型（温馨/废稿/AI污染/记忆/未知作者）
 
 ### 核心改动
-- **绘制倾向系统**：基于 ShapeAnalyzer 指标 (`closedness`, `pointedness`, `complexity`, `aspectRatio`) 计算 4 种绘制倾向
-  1. **圆形倾向**：大范围 (+20% range)、低伤害 (-15% damage)、更高灵感获取 (+30% inspiration)
-  2. **尖锐倾向**：高暴击 (+50% crit)、高穿透 (+pierce)、较小范围 (-15% range)
-  3. **混乱倾向**：高攻速 (+30% attackSpeed)、随机伤害效果 (0.7-1.3x variance)
-  4. **长直线倾向**：长距离 (+40% range)、突刺攻击偏好
-
-- **使用现有数据结构扩展**：在武器档案中新增 `drawingTendency` 字段，不推翻当前武器系统
-- **保持存档兼容**：旧武器档案没有 `drawingTendency` 字段时，不应用任何修正
-- **不新增敌人/Boss/武器类型**：严格遵循开发原则
+- **画稿裂口系统**：基于深度层级（浅层10%/中层20%/深层35%）概率生成裂口入口
+- **裂口子世界**：5 种类型各有独立场景、生物、采集物、出口
+- **嵌套裂口**：子世界内可再生成裂口（记忆5%/未知30%），支持裂口链
+- **退出随机化**：从裂口返回时出现在不同位置，制造"迷失"体验
+- **UI 深度显示**：HUD 显示当前深度层、危险等级、发现物、裂口统计
+- **3 层地图结构**：浅层草稿区/中层废稿区/深层模板污染区
 
 ### 当前状态
-- ✅ 已完成：绘制倾向系统实现
-- ✅ 已测试：代码逻辑验证
-- ⏳ 待实机测试：战斗体验差异是否明显
-- ⏳ 待完善：长直线倾向的突刺攻击偏好（仅设置标志）、圆形倾向的灵感获取加成（仅设置标志）
+- ✅ 已完成：CanvasRift 系统集成
+- ✅ 已验证：全部 17 个模块导入链无误
+- ✅ 服务器运行：http://127.0.0.1:4173/
+- ⏳ 待实机测试：裂口交互体验、嵌套裂口稳定性
 
 ### 测试方法
-详见 `绘制倾向系统-测试方法.md`，核心测试：
-1. 绘制不同类型图形，查看控制台 `[DrawingTendency]` 日志
-2. 进入战斗，查看控制台 `[DrawingTendencyModifier]` 日志
-3. 实际战斗，感受不同倾向的战斗体验差异
-4. 验证混乱倾向的随机伤害效果
-5. 验证存档兼容性（旧武器档案无 `drawingTendency` 字段时行为不变）
+1. 打开 http://127.0.0.1:4173/
+2. 按 Enter 跳过 chapter0 和 opening
+3. 在 studio 按 T 进入探索地图
+4. WASD 移动，E 键与裂口交互
+5. J 键查看图鉴
 
 ### 风险点
-- 倾向修正系数可能需要根据实际测试调整（如 +20% range 可能太多或太少）
-- 长直线倾向的"突刺攻击偏好"未完全实现（当前只是设置 `preferThrust` 标志）
-- 圆形倾向的"灵感获取加成"未完全实现（当前只是设置 `inspirationGainMultiplier` 标志）
-- 缺少 UI 反馈（玩家看不到自己武器的倾向类型和强度）
+- 裂口退出位置可能落在墙壁内（偏移量小，概率低）
+- 嵌套裂口链过长可能导致 map 遍历迷路
+- RiftWorld 内部渲染 640x360，外部包装 960x540，布局可能需调整
 
 ### 下一个 AI 接手建议
 优先处理：
-1. **实机测试绘制倾向系统**：启动 dev server，绘制不同图形，进入战斗，验证体验差异
-2. 调整倾向修正系数（如果体验差异不够明显）
-3. 实现长直线倾向的突刺攻击偏好（修改 AttackController.js 实际改变攻击模式）
-4. 实现圆形倾向的灵感获取加成（在灵感获取逻辑中应用 `inspirationGainMultiplier`）
-5. 添加 UI 反馈（在武器结果面板显示倾向类型和强度）
-6. 继续 P1-1（武器攻击动画差异）或其他 P1 任务
+1. 实机测试裂口交互体验，调 spawn 概率和奖励平衡
+2. 完善裂口子世界的生物种类（目前每种只有 2-4 个）
+3. 实现在裂口中发现物 → 画作完整度的结算链路
+4. 修复 main.js 中 inkwell 场景的 artworkPct bug（已定位，变量已定义，需验证调用栈）
 
 接手前仍需先阅读：
 1. /docs/PROJECT_STATE.md
 2. /docs/DESIGN_RULES.md
 3. /docs/TODO_QUEUE.md
 4. /docs/BUG_LOG.md
-5. /docs/Mojing_GDD.md（世界观总纲）
-6. /docs/DevelopmentRoadmap.md（优先级路线图）
-7. `绘制倾向系统-修改报告.md`（本次修改详情）
-8. `绘制倾向系统-测试方法.md`（测试指南）

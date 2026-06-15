@@ -11,9 +11,16 @@ import { createPortalManager } from "../inkwell/Portal.js";
 import { BASIC_SLASH_ATTACK, DEBUG_ATTACK_ANGLE, DEBUG_ATTACK_HITBOX, DEBUG_ATTACK_STATE } from "../inkwell/AttackController.js?v=35";
 import { createCombatSystem } from "../inkwell/CombatSystem.js?v=25";
 import { createMapSystem } from "../inkwell/MapSystem.js";
+import { createEcologyManager } from "../ecology/EcologyManager.js";
+import { placeGatesOnMap, updateGates, drawGates, findNearestGate } from "../ecology/CanvasGate.js";
+import { createSubMapScene } from "../ecology/SubMapScene.js";
+import { createArtworkCompletion } from "../ecology/ArtworkCompletion.js";
+import { shouldSpawnRift, rollRiftType, createRiftInstance, findNearestRift, updateRifts, drawRifts, RIFT_TYPES } from "../ecology/CanvasRift.js";
+import { createRiftWorld } from "../ecology/RiftWorld.js";
 import { createRewardOverlay } from "../game/builds/RewardOverlay.js?v=2";
 import { generateRelicChoices, generateEvolutionChoices } from "../game/builds/RewardGenerator.js?v=32";
 import { getWeaponTypeFromProfile } from "../game/builds/WeaponArchetypes.js?v=32";
+import { getLayerByDepth, MAP_LAYERS } from "../inkwell/MapLayers.js";
 import {
   ALL_NIGHT_BODY_COST,
   ALL_NIGHT_EXTENSION_FRAMES,
@@ -82,6 +89,32 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
   lootManager = createLootManager({ tileMap, player, weapon: lootWeaponStub, run });
   portalManager = createPortalManager({ player, onEnter: () => finish("boss") });
   const mapSystem = createMapSystem(tileMap, () => player);
+  const ecologyManager = createEcologyManager({ player, run, getCamera: () => camera });
+  const artworkCompletion = createArtworkCompletion();
+  let canvasGates = [];
+  let subMapScene = null;  // ????????
+  let subMapType = null;   // ?????
+
+  
+  function spawnRiftsOnMap() {
+    canvasRifts = [];
+    const rooms = tileMap.getRooms();
+    for (const room of rooms) {
+      if (room.type === "entrance" || room.type === "exit") continue;
+      // Determine layer based on room Y position
+      let layerId = "shallow";
+      for (const layer of MAP_LAYERS) {
+        if (room.y >= layer.yRange[0] && room.y <= layer.yRange[1]) { layerId = layer.id; break; }
+      }
+      if (shouldSpawnRift(layerId, room.type)) {
+        const typeId = rollRiftType(layerId);
+        const rx = (room.x + room.w / 2) * TILE + (Math.random() - 0.5) * room.w * TILE * 0.4;
+        const ry = (room.y + room.h / 2) * TILE + (Math.random() - 0.5) * room.h * TILE * 0.3;
+        const rift = createRiftInstance(typeId, rx, ry, layerId);
+        if (rift) canvasRifts.push(rift);
+      }
+    }
+  }
 
   function start() {
     finished = false;
@@ -104,6 +137,9 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     run.bossName = "";
     run.materialsCollected = 0;
     run.itemsCollected = 0;
+    run.artworkCompletion = 0;
+    run.currentLayer = "shallow";
+    run.deepestLayer = "shallow";
     tileMap.generate();
     lootManager.reset();
     playerController.reset();
@@ -112,6 +148,15 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     npcManager.logWeaknessTable();
     portalManager.reset();
     mapSystem.reset();
+    ecologyManager.reset();
+    ecologyManager.spawnEntranceCreatures(player.x, player.y);
+    canvasGates = placeGatesOnMap(tileMap, artworkCompletion.state.unlockedGateTypes, 2 + Math.floor(Math.random() * 2));
+    subMapScene = null;
+    subMapType = null;
+    activeRift = null;
+    riftWorld = null;
+    riftNestDepth = 0;
+    spawnRiftsOnMap();
     rewardOverlay.hide();
   }
 
@@ -165,6 +210,7 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
 
       if (npc.hp <= 0) {
         run.kills++;
+        const ecoHit = ecologyManager.onAttackHit(npc.x, npc.y);
         if (npc.boss && !npc.rewardDropped) {
           npc.rewardDropped = true;
           run.bossName = npc.variant?.name ?? "Unknown Boss";
@@ -460,6 +506,8 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     run.finishReason = reason;
     onFinish({
       ...run,
+      artworkCompletion: artworkCompletion.state.total,
+      artworkDiscoveries: artworkCompletion.state.totalDiscoveries,
       durationFrames: elapsedFrames(),
       timeLimitFrames: NIGHT_DURATION_FRAMES + addedTimeFrames,
       timeLeftFrames: timeLeftFrames(),
@@ -468,6 +516,12 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
 
   function update() {
     if (finished || awaitingTimeChoice) return;
+    if (subMapScene) { subMapScene.update(keys); return; }
+    if (riftWorld) {
+      const result = riftWorld.update(keys);
+      // Check for nested rift request
+      return;
+    }
     if (mapSystem.isFullMapOpen()) { if (mouse.justLeft) mapSystem.closeFullMap(); return; }
     if (rewardOverlay.isVisible()) {
       if (mouse.justLeft) {
@@ -478,6 +532,7 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
       return;
     }
     playerController.update();
+    trackPlayerDepth();
     resolveAttackHits();
     triggerRoomRewardIfReady();
     combatSystem.update();
@@ -492,6 +547,9 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     lootManager.update();
     portalManager.update();
     mapSystem.update();
+    ecologyManager.update();
+    updateGates(canvasGates);
+    updateRifts(canvasRifts);
     updateCamera();
     if (timeLeftFrames() <= 0) {
       if (run.allNighter) finish("deadline");
@@ -504,6 +562,50 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
 
   function handleKey(key) {
     if (key === "m") { mapSystem.toggleFullMap(); return; }
+    if (subMapScene) { subMapScene.handleKey(key); return; }
+    if (riftWorld) {
+      const result = riftWorld.handleKey(key);
+      if (result === true) {
+        // Exit rift ? return to random position in main map
+        exitRiftWorld();
+        return;
+      }
+      if (result?.nestRift) {
+        // Enter nested rift
+        enterNestedRift();
+        return;
+      }
+      return;
+    }
+    if (ecologyManager.handleKey(key)) return;
+    // Canvas gate entry
+    if (key === "e") {
+      // Check rifts first
+      const nearRift = findNearestRift(canvasRifts, player.x, player.y, 50);
+      if (nearRift && !nearRift.completed) {
+        enterRiftWorld(nearRift);
+        return;
+      }
+      const nearGate = findNearestGate(canvasGates, player.x, player.y, 50);
+      if (nearGate && !nearGate.completed) {
+        subMapType = nearGate.type;
+        subMapScene = createSubMapScene(subMapType, (discoveries, type) => {
+          // ???????
+          for (const d of discoveries) {
+            const result = artworkCompletion.addDiscovery(d, d.isJackpot || false);
+            if (result.newMilestones.length > 0) {
+              console.log("[Milestone]", result.newMilestones.map(m => m.message));
+            }
+          }
+          nearGate.completed = true;
+          subMapScene = null;
+          subMapType = null;
+          run.itemsCollected += discoveries.length;
+        });
+        subMapScene.start();
+        return;
+      }
+    }
     if (rewardOverlay.isVisible()) return;
     if (awaitingTimeChoice) {
       if (key === "enter") finish("deadline");
@@ -516,7 +618,11 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     if (key === "e") {
       if (!portalManager.tryEnter()) lootManager.openNearestChest();
     }
-    if (key === "f") finish("manual");
+    if (key === "f") {
+      // Retreat: return to surface with collected items
+      finish("retreat");
+      return;
+    }
   }
 
   function chooseOvertime() {
@@ -544,6 +650,25 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
   }
 
   function drawHud() {
+    // Layer info
+    const layerNames = { shallow: "?????", middle: "?????", deep: "???????" };
+    const layerColors = { shallow: "#f0d9a5", middle: "#8b8173", deep: "#8d1d25" };
+    const layer = run.currentLayer || "shallow";
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(4, 4, 130, 22);
+    ctx.fillStyle = layerColors[layer] || "#f0d9a5";
+    ctx.font = "bold 11px Segoe UI, Microsoft YaHei, sans-serif";
+    ctx.fillText(layerNames[layer] || layer, 10, 19);
+
+    // Collection count
+    const collected = run.itemsCollected + run.materialsCollected + run.kills;
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(W - 110, 4, 106, 22);
+    ctx.fillStyle = "#f0d9a5";
+    ctx.font = "11px Segoe UI, Microsoft YaHei, sans-serif";
+    ctx.fillText(`??: ${collected}  F ??`, W - 104, 19);
+
+
     ctx.fillStyle = "rgba(241, 234, 217, 0.86)";
     ctx.fillRect(16, H - 88, 352, 64);
     ctx.fillStyle = "#151515";
@@ -598,11 +723,83 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     label(ctx, "The extra time will show up in tomorrow's feedback.", 252, 346, 15, "#5c554c");
   }
 
+  
+  
+  function enterRiftWorld(rift) {
+    rift.entered = true;
+    activeRift = rift;
+    riftNestDepth = rift.nestDepth || 0;
+    riftWorld = createRiftWorld(rift.type, (reward) => {
+      // Rift completed ? return to main map
+      run.itemsCollected += reward.itemsCollected || 0;
+      if (reward.jackpot) {
+        run.discoveries = (run.discoveries || 0) + 1;
+        showMessage("???" + reward.jackpot.name, "#c9a846", 200);
+      }
+      exitRiftWorld();
+    }, riftNestDepth);
+    riftWorld.start();
+  }
+
+  function enterNestedRift() {
+    const parentRift = activeRift;
+    riftNestDepth++;
+    const nestedType = rollRiftType(parentRift.layerId || "deep");
+    riftWorld = createRiftWorld(nestedType, (reward) => {
+      run.itemsCollected += reward.itemsCollected || 0;
+      exitRiftWorld();
+    }, riftNestDepth);
+    riftWorld.start();
+    showMessage(`???${riftNestDepth + 1}???...`, "#c9a846", 150);
+  }
+
+  function exitRiftWorld() {
+    if (activeRift && !activeRift.completed) {
+      activeRift.completed = true;
+    }
+    riftWorld = null;
+    activeRift = null;
+    // Return to a random position in the main map (not the entrance)
+    const rooms = tileMap.getRooms();
+    const validRooms = rooms.filter(r => r.type !== "entrance" && r.type !== "exit" && r.type !== "boss");
+    if (validRooms.length > 0) {
+      const room = validRooms[Math.floor(Math.random() * validRooms.length)];
+      player.x = (room.x + room.w / 2) * TILE;
+      player.y = (room.y + room.h / 2) * TILE;
+    }
+    riftNestDepth = 0;
+  }
+
+  function showMessage(text, color, duration) {
+    // Use ecologyManager's method or just set feedback vars
+    // For now, we already have messageText in scope... 
+    // Actually inkwell.js draws HUD text, so just use console
+    console.log("[Inkwell]", text);
+  }
+
+  function trackPlayerDepth() {
+    const py = player.y / TILE;
+    let layerId = "shallow";
+    for (const layer of MAP_LAYERS) {
+      if (py >= layer.yRange[0] && py <= layer.yRange[1]) { layerId = layer.id; break; }
+    }
+    if (py > MAP_LAYERS[MAP_LAYERS.length - 1].yRange[1]) layerId = "deep";
+    run.currentLayer = layerId;
+    if (MAP_LAYERS.findIndex(l => l.id === layerId) > MAP_LAYERS.findIndex(l => l.id === run.deepestLayer)) {
+      run.deepestLayer = layerId;
+    }
+  }
+
   function draw() {
+    if (subMapScene) { subMapScene.draw(ctx); return; }
+    if (riftWorld) { riftWorld.draw(ctx); return; }
     const shake = playerController.attackController.getShakeOffset();
     const drawCamera = { x: camera.x - shake.x, y: camera.y - shake.y };
     drawInkwellBackground(ctx, drawCamera);
     tileMap.draw(drawCamera.x, drawCamera.y);
+    ecologyManager.draw(ctx, drawCamera.x, drawCamera.y);
+    drawGates(ctx, canvasGates, drawCamera.x, drawCamera.y);
+    drawRifts(ctx, canvasRifts, drawCamera.x, drawCamera.y);
     lootManager.draw(ctx, drawCamera.x, drawCamera.y);
     npcManager.draw(ctx, drawCamera.x, drawCamera.y);
     drawHitNpcColliders(drawCamera.x, drawCamera.y);
