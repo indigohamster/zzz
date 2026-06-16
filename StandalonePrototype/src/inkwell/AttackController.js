@@ -165,9 +165,11 @@ export const WEAPON_ATTACK_PATTERNS = {
     moveMultiplier: 0.82,
     comboResetSeconds: 0.28,
     animationPreset: {
-      name: "arcSlash",
-      swingArcDegrees: 58,
-      trailCount: 2,
+      name: "daggerSlash",
+      slashArcDegrees: 65,
+      trailCount: 3,
+      flickAmplitude: 12,
+      flickSpeed: 2.2,
     },
   },
   whipLash: {
@@ -194,11 +196,44 @@ export const WEAPON_ATTACK_PATTERNS = {
     moveMultiplier: 0.76,
     comboResetSeconds: 0.35,
     animationPreset: {
-      name: "thrust",
-      thrustPixels: 48,
-      rotationDegrees: 16,
-      lengthScale: 1.08,
-      trailCount: 4,
+      name: "whipLash",
+      crackPixels: 58,
+      windbackDegrees: -50,
+      crackDegrees: 22,
+      lengthScale: 1.52,
+      trailCount: 6,
+      waveSegments: 5,
+    },
+  },
+  staffSpin: {
+    id: "staffSpin",
+    archetype: "staff",
+    label: "Staff",
+    range: 70,
+    hitboxWidth: 72,
+    hitboxHeight: 38,
+    forwardOffset: 44,
+    hitShape: {
+      type: "rect",
+    },
+    startupFrames: 2,
+    activeFrames: 8,
+    recoveryFrames: 7,
+    damage: 10,
+    knockbackX: 3.4,
+    knockbackY: -1.4,
+    damageMultiplier: 0.95,
+    knockbackMultiplier: 1.1,
+    hitstopSeconds: 0.05,
+    shakeIntensity: 3.4,
+    moveMultiplier: 0.72,
+    comboResetSeconds: 0.35,
+    animationPreset: {
+      name: "staffSpin",
+      spinArcDegrees: 210,
+      lengthScale: 1.18,
+      trailCount: 5,
+      spinOffsetDegrees: -30,
     },
   },
 };
@@ -1253,7 +1288,7 @@ function resolveSpecPattern(archetype, weaponProfile) {
   if (archetype === "hammer") return "heavySmash";
   if (archetype === "whip") return "whipLash";
   if (archetype === "shield") return "guardBash";
-  if (archetype === "staff") return "arcSlash";
+  if (archetype === "staff") return "staffSpin";
   return "arcSlash";
 }
 
@@ -1295,6 +1330,9 @@ function getAttackRange(pattern, weapon) {
   const range = Number.isFinite(profileRange) ? profileRange : Number.isFinite(baseRange) ? baseRange : fallback;
   if (pattern.id === "thrust") return Math.max(86, range);
   if (pattern.id === "arcSlash") return Math.max(56, range);
+  if (pattern.id === "daggerSlash") return Math.min(42, Math.max(32, range));
+  if (pattern.id === "whipLash") return Math.max(90, range);
+  if (pattern.id === "staffSpin") return Math.max(62, range);
   if (pattern.id === "heavySmash") return Math.min(52, Math.max(48, range));
   if (pattern.id === "guardBash") return Math.min(42, Math.max(38, range));
   return range;

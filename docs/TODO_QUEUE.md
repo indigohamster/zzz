@@ -18,6 +18,13 @@
 - P0-1：swept melee 命中检测加入 NPC 体积补偿
 - P0-2：swept melee 统一使用 attackAngle 方向
 
+### P1-1 增强不同武器的攻击动画差异
+状态：✅ 已完成 (2026-06-16)。
+
+详情：
+- 新增 `daggerSlash`（匕首连击 + flick 震荡）、`whipLash`（鞭打蓄力+爆裂+波浪）、`staffSpin`（法杖 210° 旋转横扫）三种专属动画
+- 修改文件：`AttackController.js`、`WeaponSpriteRenderer.js`、`WeaponArchetypes.js`、`builds/WeaponArchetypes.js`
+
 ### OpeningScene 开场场景
 状态：已完成。
 
@@ -44,7 +51,16 @@
 ## 当前优先级 P1
 
 ### P1-1 增强不同武器的攻击动画差异
+状态：✅ 已完成 (2026-06-16)。
+
 目标：不同武器在视觉上能明显区分（动画/特效差异）。
+
+改动内容：
+- 匕首不再复用剑的弧线挥砍，改用快速 flick 连击动画 (daggerSlash)
+- 鞭子不再复用枪的直线突刺，改用蓄力-爆裂-波浪抽打动画 (whipLash)
+- 法杖不再复用剑的弧线挥砍，改用 210° 大弧线旋转横扫动画 (staffSpin)
+- WeaponArchetypes.js 的 animationPreset 统一使用 `name` 键
+- builds/WeaponArchetypes.js 中 staff 的 attackPattern 更新为 staffSpin
 
 ### P1-2 完善画板类型到武器系统的消费链路
 目标：画出来的类型必须实际进入战斗系统，而不是只在 UI 层显示。

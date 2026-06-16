@@ -24,8 +24,11 @@
       arc: 58,
     },
     animationPreset: {
-      pattern: "arcSlash",
-      swingArcDegrees: 58,
+      name: "daggerSlash",
+      slashArcDegrees: 65,
+      trailCount: 3,
+      flickAmplitude: 12,
+      flickSpeed: 2.2,
     },
   },
   sword: {
@@ -53,8 +56,9 @@
       arc: 75,
     },
     animationPreset: {
-      pattern: "arcSlash",
+      name: "arcSlash",
       swingArcDegrees: 75,
+      trailCount: 4,
     },
   },
   spear: {
@@ -147,7 +151,7 @@
   staff: {
     id: "staff",
     displayName: "Staff",
-    attackPattern: "arcSlash",
+    attackPattern: "staffSpin",
     damageMultiplier: 0.9,
     rangeMultiplier: 1.2,
     startup: 2,
@@ -169,8 +173,11 @@
       arc: 85,
     },
     animationPreset: {
-      pattern: "arcSlash",
-      swingArcDegrees: 85,
+      name: "staffSpin",
+      spinArcDegrees: 210,
+      trailCount: 5,
+      lengthScale: 1.18,
+      spinOffsetDegrees: -30,
     },
   },
   sketch_sword: {
