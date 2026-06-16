@@ -2,7 +2,7 @@
 
 ## 当前版本
 
-Commit: `debcb13`
+Commit: `9e51247`
 分支: `main` → 远程 `origin/main`
 仓库: `https://github.com/indigohamster/zzz`
 
