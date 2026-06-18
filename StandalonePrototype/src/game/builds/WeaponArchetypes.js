@@ -63,7 +63,7 @@ export const BUILD_WEAPON_ARCHETYPES = {
   },
   staff: {
     weaponType: "staff",
-    attackPattern: "arcSlash",
+    attackPattern: "staffSpin",
     damage: 11,
     range: 70,
     attackSpeed: 3.0,

@@ -254,6 +254,9 @@ function getWeaponPose(config, state, idleFlip) {
   if (name === "thrust") return getThrustPose(config, state, idleAngle);
   if (name === "heavySmash") return getHeavySmashPose(config, state, idleAngle);
   if (name === "guardBash") return getGuardBashPose(config, state, idleAngle);
+  if (name === "daggerSlash") return getDaggerSlashPose(config, state, idleAngle);
+  if (name === "whipLash") return getWhipLashPose(config, state, idleAngle);
+  if (name === "staffSpin") return getStaffSpinPose(config, state, idleAngle);
   return getArcSlashPose(config, state, idleAngle);
 }
 
@@ -334,6 +337,111 @@ function getGuardBashPose(config, state, idleAngle) {
       : bashPixels * (1 - easeInOut(state.progress));
   const angle = state.phase === "startup" ? lerpAngle(idleAngle, bashAngle, easeOut(state.progress)) : bashAngle;
   return createPose(angle, length * (preset.lengthScale ?? 0.82), Math.cos(state.angle) * push, Math.sin(state.angle) * push, getTrailAngles(idleAngle, angle, preset.trailCount ?? 1));
+}
+
+// Dagger: Quick multi-strike with rapid flicking motion.
+// Visually distinct from sword - faster, shorter, with an oscillating zigzag.
+function getDaggerSlashPose(config, state, idleAngle) {
+  const preset = state.animationPreset ?? {};
+  const length = getAttackDisplayLength(config, state);
+  const arc = degreesToRadians(preset.slashArcDegrees ?? 65);
+  const flickAmp = degreesToRadians(preset.flickAmplitude ?? 12);
+  const flickSpeed = preset.flickSpeed ?? 2.2;
+  const slashStart = state.angle - arc / 2;
+  const slashEnd = state.angle + arc / 2;
+
+  if (state.phase === "startup") {
+    // Quick flick from idle to slash start
+    const t = easeIn(state.progress);
+    const angle = lerpAngle(idleAngle, slashStart, t);
+    return createPose(angle, length * 0.9);
+  }
+
+  if (state.phase === "active") {
+    const t = state.progress;
+    // Main slash with rapid oscillation for a "flickering" dagger feel
+    const baseAngle = lerpAngle(slashStart, slashEnd, easeOut(t));
+    const flick = Math.sin(t * Math.PI * flickSpeed) * flickAmp * (1 - t * 0.6);
+    const angle = baseAngle + flick;
+    return createPose(angle, length, 0, 0, getTrailAngles(slashStart, angle, preset.trailCount ?? 3));
+  }
+
+  // Recovery: snap back quickly
+  const t = easeIn(state.progress);
+  const angle = lerpAngle(slashEnd, idleAngle, t);
+  return createPose(angle, length, 0, 0, getTrailAngles(slashEnd, angle, 1));
+}
+
+// Whip: Cracking whip with long windback, extended length, and wave curve.
+// Visually distinct from spear - longer delay, dramatic crack, length extension.
+function getWhipLashPose(config, state, idleAngle) {
+  const preset = state.animationPreset ?? {};
+  const length = getAttackDisplayLength(config, state);
+  const windback = degreesToRadians(preset.windbackDegrees ?? -50);
+  const crack = degreesToRadians(preset.crackDegrees ?? 22);
+  const crackDist = preset.crackPixels ?? 58;
+  const waveSegments = preset.waveSegments ?? 5;
+
+  if (state.phase === "startup") {
+    // Wind the whip back behind the character
+    const t = easeInOut(state.progress);
+    const angle = lerpAngle(idleAngle, state.angle + windback, t);
+    // Slight length reduction during windup
+    return createPose(angle, length * 0.82, 0, 0, getTrailAngles(idleAngle, angle, 2));
+  }
+
+  if (state.phase === "active") {
+    // Crack forward with extended length and wave effect
+    const t = easeOut(state.progress);
+    const angle = lerpAngle(state.angle + windback, state.angle + crack, t);
+    const extLength = length * (1 + (preset.lengthScale ?? 1.52) - 1) * t;
+    // Forward push as the whip cracks
+    const pushX = Math.cos(state.angle) * crackDist * t;
+    const pushY = Math.sin(state.angle) * crackDist * t;
+    // Wave oscillation along the whip
+    const wave = Math.sin(t * Math.PI * waveSegments) * 4 * (1 - t * 0.3);
+    const waveAngle = angle + degreesToRadians(wave);
+    return createPose(waveAngle, extLength, pushX, pushY, getTrailAngles(state.angle + windback, angle, preset.trailCount ?? 6));
+  }
+
+  // Recovery: pull back and snap to idle
+  const t = easeOut(state.progress);
+  const angle = lerpAngle(state.angle + crack, idleAngle, t);
+  const extLength = length * (1 + (preset.lengthScale ?? 1.52) - 1) * (1 - t);
+  return createPose(angle, extLength, 0, 0, getTrailAngles(state.angle + crack, angle, 2));
+}
+
+// Staff: Wide spinning sweep around the character.
+// Visually distinct from sword - much wider arc, spins around the body.
+function getStaffSpinPose(config, state, idleAngle) {
+  const preset = state.animationPreset ?? {};
+  const length = getAttackDisplayLength(config, state);
+  const spinArc = degreesToRadians(preset.spinArcDegrees ?? 210);
+  const spinOffset = degreesToRadians(preset.spinOffsetDegrees ?? -30);
+
+  // Staff sweep starts offset from attack angle so it spins through the target
+  const spinStart = state.angle + spinOffset - spinArc / 2;
+  const spinEnd = state.angle + spinOffset + spinArc / 2;
+
+  if (state.phase === "startup") {
+    // Begin rotation from idle into the spin start position
+    const t = easeInOut(state.progress);
+    const angle = lerpAngle(idleAngle, spinStart, t);
+    return createPose(angle, length, 0, 0, getTrailAngles(idleAngle, angle, 2));
+  }
+
+  if (state.phase === "active") {
+    // Full sweep across the wide arc
+    const t = easeOut(state.progress);
+    const angle = lerpAngle(spinStart, spinEnd, t);
+    const extLength = length * (preset.lengthScale ?? 1.18);
+    return createPose(angle, extLength, 0, 0, getTrailAngles(spinStart, angle, preset.trailCount ?? 5));
+  }
+
+  // Recovery: rotate back to idle
+  const t = easeInOut(state.progress);
+  const angle = lerpAngle(spinEnd, idleAngle, t);
+  return createPose(angle, length, 0, 0, getTrailAngles(spinEnd, angle, 2));
 }
 
 function createPose(angle, length, handOffsetX = 0, handOffsetY = 0, trailAngles = []) {

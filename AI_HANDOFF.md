@@ -2,7 +2,7 @@
 
 ## 当前版本
 
-Commit: `debcb13`
+Commit: `9e51247`
 分支: `main` → 远程 `origin/main`
 仓库: `https://github.com/indigohamster/zzz`
 
@@ -41,7 +41,7 @@ Commit: `debcb13`
   - 简单 UI（使用现有 label() 函数）
 
 ### 未完成 (P1)
-- 增强不同武器攻击动画差异
+- 增强不同武器攻击动画差异 ✅ **已完成** (2026-06-16)
 - 完善画板类型到武器系统消费链路
 - 优化地图生成玩法节奏
 
@@ -83,10 +83,21 @@ Commit: `debcb13`
 
 ## 下一任务
 
-P1-1：增强不同武器的攻击动画差异
-（当前 sword/spear/dagger/hammer 外观数据不同但视觉表现几乎一样，且 fallback BasicSlash 仍在部分流程中生效）
+P1-2：完善画板类型到武器系统消费链路
+（当前画板类型在 UI 层显示但未完全接入武器生成/切换流程）
 
 ## 最新修改说明
+
+### P1-1：增强不同武器的攻击动画差异 ✅
+- 新增 `getDaggerSlashPose()`：匕首快速连击动画，带振荡 flick 效果
+- 新增 `getWhipLashPose()`：鞭打动画，长蓄力 + 爆裂前抽 + 长度延伸 + 波浪曲线
+- 新增 `getStaffSpinPose()`：法杖旋转横扫动画，210° 大弧线环绕角色
+- 新增 `staffSpin` 攻击模式（WEAPON_ATTACK_PATTERNS）
+- 更新 `AttackController.js`：daggerSlash/whipLash 使用专属 animationPreset.name
+- 更新 `WeaponSpriteRenderer.js`：getWeaponPose() 路由新增三路分支
+- 更新 `WeaponArchetypes.js`：animationPreset 统一使用 `name` 键，dagger/staff 指向新模式
+- 更新 `builds/WeaponArchetypes.js`：staff attackPattern → "staffSpin"
+- 修正 dagger/staff/whip 不再复用 sword/spear 动画
 
 ### Commit: `debcb13` - 商店系统
 - 新增 `src/game/ShopSystem.js`：定义商品数据结构和购买逻辑
