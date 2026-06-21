@@ -1,5 +1,5 @@
 import { H, TILE, W } from "../core/config.js?v=27";
-import { drawModelSprite } from "../core/SpriteAssets.js?v=2";
+import { drawModelSprite } from "../core/SpriteAssets.js?v=3";
 import { drawInkCompanionAt, drawPixelPersonAt } from "../characters/protagonist/ProtagonistSprite.js?v=28";
 
 const TALK_RANGE = 54;

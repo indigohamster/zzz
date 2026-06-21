@@ -1,5 +1,5 @@
 import { draw as drawWeaponSprite } from "../../inkwell/WeaponSpriteRenderer.js?v=24";
-import { drawModelSprite } from "../../core/SpriteAssets.js?v=2";
+import { drawModelSprite } from "../../core/SpriteAssets.js?v=3";
 
 const PALETTE = {
   outline: "#05070b",

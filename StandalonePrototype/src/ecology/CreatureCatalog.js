@@ -65,7 +65,7 @@ export const CREATURE_CATALOG = {
 
     size: { w: 26, h: 18 },
     color: "#4a4a4a",
-    spriteId: "monster_worm",
+    spriteId: "margin_eel",
     spriteHeight: 36,
     animFrames: 6,
 
@@ -106,7 +106,7 @@ export const CREATURE_CATALOG = {
 
     size: { w: 22, h: 12 },
     color: "#3a3a5c",
-    spriteId: "monster_kite",
+    spriteId: "paper_kite",
     spriteHeight: 36,
     animFrames: 8,
 
@@ -151,7 +151,7 @@ export const CREATURE_CATALOG = {
 
     size: { w: 30, h: 28 },
     color: "#8b6b7d",
-    spriteId: "monster_book",
+    spriteId: "binder",
     spriteHeight: 46,
     animFrames: 5,
 
@@ -195,7 +195,7 @@ export const CREATURE_CATALOG = {
 
     size: { w: 36, h: 24 },
     color: "#6b8fa3",
-    spriteId: "monster_cube",
+    spriteId: "sketchling",
     spriteHeight: 38,
     animFrames: 6,
 
@@ -240,7 +240,7 @@ export const CREATURE_CATALOG = {
 
     size: { w: 28, h: 20 },
     color: "#5a4a6a",
-    spriteId: "monster_eye_spider",
+    spriteId: "inkmite",
     spriteHeight: 34,
     animFrames: 7,
 

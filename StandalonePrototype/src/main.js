@@ -1,6 +1,6 @@
 import { H, W } from "./core/config.js?v=27";
 import { drawPaperBackground, drawPixelFrame, label } from "./core/render.js?v=27";
-import { drawModelSprite, preloadModelSprites } from "./core/SpriteAssets.js?v=2";
+import { drawModelSprite, preloadModelSprites } from "./core/SpriteAssets.js?v=3";
 import { createDrawingCanvas } from "./features/drawing/DrawingCanvas.js?v=25";
 import { drawWeaponResultPanel, weaponResultEnterButton } from "./features/drawing/WeaponResultPanel.js?v=26";
 import { createDayCycle } from "./game/DayCycle.js?v=25";

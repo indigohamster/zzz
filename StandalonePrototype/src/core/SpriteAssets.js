@@ -57,6 +57,16 @@ export function drawModelSprite(ctx, id, x, footY, options = {}) {
   return true;
 }
 
+export function drawCenteredModelSprite(ctx, id, centerX, centerY, options = {}) {
+  const sprite = getModelSprite(id);
+  if (!sprite?.ready) return false;
+  const scale = options.height ? options.height / sprite.h : (options.scale ?? 1);
+  const drawH = Math.max(1, Math.round(sprite.h * scale));
+  return drawModelSprite(ctx, id, centerX, centerY + Math.floor(drawH / 2), options);
+}
+
+export const drawCentered = drawCenteredModelSprite;
+
 export function preloadModelSprites(ids = Object.keys(MODEL_SPRITES)) {
   for (const id of ids) getModelSprite(id);
 }

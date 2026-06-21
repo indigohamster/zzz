@@ -2,7 +2,7 @@ import { TILE } from "../core/config.js?v=27";
 import { GRAVITY, MAX_FALL } from "./InkwellConfig.js?v=2";
 import { pickBossVariant } from "./BossCatalog.js?v=25";
 import { pickMonsterForRoom } from "./MonsterCatalog.js?v=1";
-import { drawModelSprite } from "../core/SpriteAssets.js?v=2";
+import { drawModelSprite } from "../core/SpriteAssets.js?v=3";
 
 export function createNpcManager({ physics, player, run, tileMap, combat, gameState }) {
   const npcs = [];

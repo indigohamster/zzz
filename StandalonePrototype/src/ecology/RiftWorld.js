@@ -6,7 +6,7 @@ import { createCreatureInstance, updateCreatureAI, damageCreature } from "./Crea
 import { CREATURE_CATALOG } from "./CreatureCatalog.js?v=1";
 import { tryJackpot } from "./DiscoveryItems.js";
 import { RIFT_TYPES } from "./CanvasRift.js";
-import { drawCenteredModelSprite } from "../core/SpriteAssets.js?v=2";
+import { drawCenteredModelSprite } from "../core/SpriteAssets.js?v=3";
 import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=28";
 
 const SW = 640, SH = 360;

@@ -5,7 +5,7 @@ import { CREATURE_CATALOG } from "./CreatureCatalog.js?v=1";
 import { createCreatureInstance, updateCreatureAI, damageCreature } from "./CreatureAI.js";
 import { rollDiscovery, tryJackpot } from "./DiscoveryItems.js";
 import { GATE_TYPES } from "./CanvasGate.js";
-import { drawCenteredModelSprite } from "../core/SpriteAssets.js?v=2";
+import { drawCenteredModelSprite } from "../core/SpriteAssets.js?v=3";
 import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=28";
 
 const SW = 640;  // 子地图视口宽度
