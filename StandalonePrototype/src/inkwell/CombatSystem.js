@@ -5,8 +5,40 @@ const CRIT_MULTIPLIER = 1.65;
 const COUNTER_DAMAGE_MULTIPLIER = 1.35;
 const RESIST_DAMAGE_MULTIPLIER = 0.75;
 
-export function createCombatSystem({ player, run, random = Math.random }) {
+export function createCombatSystem({ player, run, gameState, random = Math.random }) {
   const floatingTexts = [];
+  
+  // 获取临时Buff的效果倍率
+  function getTempBuffMultiplier(statType) {
+    if (!gameState?.tempBuffs) return 1;
+    let multiplier = 1;
+    for (const buff of gameState.tempBuffs) {
+      if (buff.stat === statType) {
+        multiplier *= buff.value;
+      }
+    }
+    return multiplier;
+  }
+  
+  // 获取临时Buff的加成值（用于加法类Buff如maxHp）
+  function getTempBuffBonus(statType) {
+    if (!gameState?.tempBuffs) return 0;
+    let bonus = 0;
+    for (const buff of gameState.tempBuffs) {
+      if (buff.stat === statType) {
+        bonus += buff.value;
+      }
+    }
+    return bonus;
+  }
+  
+  // 消耗临时Buff（战斗结束后调用）
+  function consumeTempBuffs() {
+    if (gameState?.tempBuffs) {
+      console.log("[CombatSystem] 消耗临时Buff:", gameState.tempBuffs);
+      gameState.tempBuffs = [];
+    }
+  }
 
   function reset() {
     floatingTexts.length = 0;
@@ -29,10 +61,41 @@ export function createCombatSystem({ player, run, random = Math.random }) {
   }
 
   function strikeNpc({ npc, npcManager, baseDamage, direction, weapon, weaponTrait, knockbackX, knockbackY, attackState = null }) {
-    const roll = rollWeaponDamage(baseDamage, weapon, random);
+    // 应用临时Buff：伤害提升
+    const damageMultiplier = getTempBuffMultiplier("damage");
+    const adjustedBaseDamage = Math.max(1, Math.round(baseDamage * damageMultiplier));
+    
+    const roll = rollWeaponDamage(adjustedBaseDamage, weapon, random);
+    
+    // 应用临时Buff：暴击率提升
+    const critChanceBonus = getTempBuffBonus("critChance");
+    if (critChanceBonus > 0 && !roll.critical) {
+      // 如果有暴击率buff，重新计算暴击
+      const stats = weapon?.finalStats ?? weapon?.combat ?? {};
+      const critChance = clampNumber((stats.criticalChance ?? stats.crit ?? 0) + critChanceBonus, 0, 1);
+      if (random() < critChance) {
+        roll.damage = Math.max(1, Math.round(roll.damage * CRIT_MULTIPLIER));
+        roll.critical = true;
+      }
+    }
+    
     const matchup = resolveWeaponEnemyMatchup({ weapon, attackState, npc });
     const damageAfterMatchup = Math.max(1, Math.round(roll.damage * matchup.multiplier));
     const finalDamage = npcManager.damageNpc(npc, damageAfterMatchup, direction, weaponTrait, knockbackX, knockbackY);
+    
+    // 显示Buff效果提示
+    if (damageMultiplier > 1) {
+      spawnFloatingText({
+        text: `Buff x${damageMultiplier.toFixed(2)}`,
+        x: npc.x,
+        y: npc.y - npc.h * 0.85,
+        color: "#f2b84b",
+        size: 11,
+        vx: (random() - 0.5) * 0.25,
+        vy: -0.62,
+      });
+    }
+    
     logMatchup(matchup);
     spawnFloatingText({
       text: roll.critical ? `${finalDamage}!` : String(finalDamage),
@@ -109,7 +172,7 @@ export function createCombatSystem({ player, run, random = Math.random }) {
     });
   }
 
-  return { reset, update, strikeNpc, hitPlayer, draw };
+  return { reset, update, strikeNpc, hitPlayer, draw, consumeTempBuffs };
 }
 
 function rollWeaponDamage(baseDamage, weapon, random) {

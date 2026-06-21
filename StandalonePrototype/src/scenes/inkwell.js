@@ -116,7 +116,7 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, gameState
     run,
   });
   const player = playerController.state;
-  const combatSystem = createCombatSystem({ player, run });
+  const combatSystem = createCombatSystem({ player, run, gameState });
   npcManager = createNpcManager({ physics, player, run, tileMap, combat: combatSystem, gameState });
   storyNpcManager = createStoryNpcManager({ player, tileMap, run, gameState });
   lootManager = createLootManager({ tileMap, player, weapon: lootWeaponStub, run });
@@ -303,6 +303,14 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, gameState
 
       if (npc.hp <= 0) {
         run.kills++;
+        // 奖励货币（击败敌人）
+        const moneyReward = npc.boss ? 
+          Math.floor(Math.random() * 11) + 10 :  // Boss: 10-20货币
+          Math.floor(Math.random() * 3) + 1;     // 普通敌人: 1-3货币
+        if (gameState) {
+          gameState.money = (gameState.money ?? 0) + moneyReward;
+          console.log(`[Money] 击败${npc.boss ? "Boss" : "敌人"}获得 ${moneyReward} 货币，当前: ${gameState.money}`);
+        }
         addFlow(npc.boss ? (TUNING.flow?.bossKill ?? 60) : (TUNING.flow?.kill ?? 16), npc.boss ? "boss broken" : "enemy inked", npc.boss ? "#f2b84b" : "#b23b48");
         const ecoHit = ecologyManager.onAttackHit(npc.x, npc.y);
         if (npc.boss && !npc.rewardDropped) {
@@ -1367,7 +1375,10 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, gameState
     if (!room) return;
     if (room.hasRewardTriggered || room.rewardClaimed) return;
     if (!npcManager.roomEnemiesCleared(room.id)) return;
-
+    
+    // 消耗临时Buff（战斗结束）
+    combatSystem.consumeTempBuffs();
+    
     room.hasRewardTriggered = true;
     addFlow(TUNING.flow?.roomClear ?? 24, "room cleared", "#f2b84b");
     const buildState = weapon.buildState;
