@@ -1,5 +1,5 @@
 import { draw as drawWeaponSprite } from "../../inkwell/WeaponSpriteRenderer.js?v=24";
-import { drawModelSprite } from "../../core/SpriteAssets.js?v=3";
+import { drawModelSprite } from "../../core/SpriteAssets.js?v=21";
 
 const PALETTE = {
   outline: "#05070b",
@@ -39,6 +39,7 @@ export function drawProtagonist(ctx, player, cameraX, cameraY) {
     frame: player.animFrame,
     walkSpeed: walk,
     onGround: player.onGround,
+    verticalSpeed: player.vy ?? 0,
     showTank: true,
   });
   drawWeaponSprite(ctx, player, null, player.attack, { x, y: bodyY, flip });
@@ -55,17 +56,29 @@ export function drawProtagonistAt(ctx, options = {}) {
   const walkSpeed = Math.abs(options.walkSpeed ?? 0);
   const onGround = options.onGround !== false;
   const drawing = Boolean(options.drawing);
+  const motion = drawing ? "draw" : !onGround ? "jump" : walkSpeed > 2.1 ? "run" : walkSpeed > 0.12 ? "walk" : "idle";
+  const animationFrame = motion === "jump" ? jumpFrameForVerticalSpeed(options.verticalSpeed ?? 0) : undefined;
+  const modelFacing = -flip;
+  const spriteHeight = options.spriteHeight ?? 74;
   const walkBob = onGround && !drawing ? Math.round(Math.sin(frame * 0.18) * Math.min(1, walkSpeed)) : 0;
   const stride = onGround && !drawing ? Math.round(Math.sin(frame * 0.18) * Math.min(2, walkSpeed)) : 0;
-  const y = footY - 34 + walkBob;
+  const modelY = footY - Math.round(spriteHeight * 0.57) + walkBob;
+  const fallbackY = footY - 34 + walkBob;
 
   drawGroundShadow(ctx, x, footY);
   if (drawModelSprite(ctx, "protagonist", x, footY, {
-    height: options.spriteHeight ?? 60,
-    facing: flip,
+    height: spriteHeight,
+    facing: modelFacing,
+    frame,
+    walkSpeed,
+    motion,
+    animation: motion,
+    animationFrame,
+    accent: PALETTE.inkLight,
   })) {
-    return y;
+    return modelY;
   }
+  const y = fallbackY;
   drawLegs(ctx, x, y, stride);
   if (options.showTank !== false) drawInkTank(ctx, x, y, flip);
   drawBody(ctx, x, y, flip);
@@ -74,6 +87,14 @@ export function drawProtagonistAt(ctx, options = {}) {
   if (drawing) drawPencil(ctx, x, y, flip);
   drawHeadphoneCord(ctx, x, y);
   return y;
+}
+
+function jumpFrameForVerticalSpeed(verticalSpeed) {
+  if (verticalSpeed < -5) return 1;
+  if (verticalSpeed < -1.5) return 2;
+  if (verticalSpeed < 1) return 3;
+  if (verticalSpeed < 4) return 4;
+  return 5;
 }
 
 export function drawPixelPersonAt(ctx, options = {}) {
@@ -147,6 +168,9 @@ export function drawInkCompanionAt(ctx, options = {}) {
   if (drawModelSprite(ctx, "inkdot", x, footY, {
     height: options.spriteHeight ?? 30,
     facing: flip,
+    frame,
+    motion: "float",
+    accent,
   })) {
     return;
   }

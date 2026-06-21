@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "models": [
+    {
+      "id": "protagonist",
+      "folder": "player/protagonist",
+      "kind": "hero",
+      "displayName": "Protagonist"
+    },
+    {
+      "id": "inkdot",
+      "folder": "companions/inkdot",
+      "kind": "companion",
+      "displayName": "Inkdot"
+    },
+    {
+      "id": "supply_keeper",
+      "folder": "story_npcs/supply_keeper",
+      "kind": "npc",
+      "displayName": "Supply Keeper"
+    },
+    {
+      "id": "forgotten_draft",
+      "folder": "story_npcs/forgotten_draft",
+      "kind": "npc",
+      "displayName": "Forgotten Draft"
+    },
+    {
+      "id": "deleted_character",
+      "folder": "story_npcs/deleted_character",
+      "kind": "rift",
+      "displayName": "Deleted Character"
+    },
+    {
+      "id": "zhou_redline_shadow",
+      "folder": "story_npcs/zhou_redline_shadow",
+      "kind": "pressure",
+      "displayName": "Zhou Redline Shadow"
+    },
+    {
+      "id": "office_zhou",
+      "folder": "office_npcs/office_zhou",
+      "kind": "office",
+      "displayName": "Zhou"
+    },
+    {
+      "id": "office_mira",
+      "folder": "office_npcs/office_mira",
+      "kind": "office",
+      "displayName": "Mira"
+    },
+    {
+      "id": "office_ren",
+      "folder": "office_npcs/office_ren",
+      "kind": "office",
+      "displayName": "Ren"
+    },
+    {
+      "id": "office_client",
+      "folder": "office_npcs/office_client",
+      "kind": "office",
+      "displayName": "Client"
+    },
+    {
+      "id": "monster_cube",
+      "folder": "monsters/monster_cube",
+      "kind": "monster",
+      "displayName": "Sketchling Cube"
+    },
+    {
+      "id": "monster_eye_spider",
+      "folder": "monsters/monster_eye_spider",
+      "kind": "monster",
+      "displayName": "Inkmite Eye"
+    },
+    {
+      "id": "monster_book",
+      "folder": "monsters/monster_book",
+      "kind": "monster",
+      "displayName": "Binder Book"
+    },
+    {
+      "id": "monster_worm",
+      "folder": "monsters/monster_worm",
+      "kind": "monster",
+      "displayName": "Margin Eel"
+    },
+    {
+      "id": "monster_kite",
+      "folder": "monsters/monster_kite",
+      "kind": "monster",
+      "displayName": "Paper Kite"
+    },
+    {
+      "id": "monster_inkpot",
+      "folder": "monsters/monster_inkpot",
+      "kind": "monster",
+      "displayName": "Blot Sentinel"
+    },
+    {
+      "id": "boss_portal_machine",
+      "folder": "bosses/boss_portal_machine",
+      "kind": "boss",
+      "displayName": "Template Engine"
+    },
+    {
+      "id": "boss_stone_brute",
+      "folder": "bosses/boss_stone_brute",
+      "kind": "boss",
+      "displayName": "Eraser Warden"
+    },
+    {
+      "id": "boss_printer_beast",
+      "folder": "bosses/boss_printer_beast",
+      "kind": "boss",
+      "displayName": "Printhead Maw"
+    }
+  ]
+}

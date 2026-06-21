@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "typeFolder": "story_npcs",
+  "motionStyle": "story",
+  "source": "base.png",
+  "generatedActions": [
+    "idle",
+    "walk",
+    "talk",
+    "hurt"
+  ],
+  "productionNote": "This is a typed first pass. Promote important characters to rig-baked folders when their gameplay role needs stronger acting."
+}

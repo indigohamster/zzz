@@ -1,7 +1,7 @@
 (async function boot() {
   try {
     await loadExternalTuning();
-    await import("./main.js?v=60");
+    await import("./main.js?v=79");
   } catch (error) {
     const canvas = document.getElementById("game");
     const ctx = canvas?.getContext("2d");

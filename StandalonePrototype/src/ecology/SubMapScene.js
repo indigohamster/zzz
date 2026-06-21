@@ -5,8 +5,8 @@ import { CREATURE_CATALOG } from "./CreatureCatalog.js?v=1";
 import { createCreatureInstance, updateCreatureAI, damageCreature } from "./CreatureAI.js";
 import { rollDiscovery, tryJackpot } from "./DiscoveryItems.js";
 import { GATE_TYPES } from "./CanvasGate.js";
-import { drawCenteredModelSprite } from "../core/SpriteAssets.js?v=3";
-import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=28";
+import { drawCenteredModelSprite } from "../core/SpriteAssets.js?v=21";
+import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=47";
 
 const SW = 640;  // 子地图视口宽度
 const SH = 360;  // 子地图视口高度
@@ -1265,6 +1265,8 @@ export function createSubMapScene(gateType, onComplete) {
     if (cat.spriteId && drawCenteredModelSprite(ctx, cat.spriteId, sx, sy, {
       height: cat.spriteHeight ?? Math.max(cat.size.w, cat.size.h) * 2,
       alpha: hostile ? 1 : 0.92,
+      motion: hostile ? "hostile" : "float",
+      accent: hostile ? "#b23b48" : cat.color,
     })) {
       return;
     }

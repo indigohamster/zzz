@@ -5,7 +5,7 @@ import { H, TILE, W, WORLD_H, WORLD_W, Tile, tileColors } from "../core/config.j
 import { label, drawPaperBackground } from "../core/render.js";
 import { drawInkwellBackground } from "../inkwell/Background.js";
 import { drawInkwellLighting } from "../inkwell/Lighting.js";
-import { createPlayer } from "../inkwell/Player.js?v=38";
+import { createPlayer } from "../inkwell/Player.js?v=57";
 import { createTileMap } from "../inkwell/TileMap.js";
 import { createPhysics } from "../inkwell/Physics.js";
 import { CREATURE_CATALOG } from "../ecology/CreatureCatalog.js?v=1";
@@ -16,7 +16,7 @@ import {
   RIFT_TYPES, RIFT_VISUALS, shouldSpawnRift, rollRiftType,
   createRiftInstance, findNearestRift, updateRifts, drawRifts,
 } from "../ecology/CanvasRift.js";
-import { createRiftWorld } from "../ecology/RiftWorld.js?v=5";
+import { createRiftWorld } from "../ecology/RiftWorld.js?v=24";
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");

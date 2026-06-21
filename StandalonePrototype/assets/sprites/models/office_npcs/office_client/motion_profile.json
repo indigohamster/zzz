@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "typeFolder": "office_npcs",
+  "motionStyle": "office",
+  "source": "base.png",
+  "generatedActions": [
+    "idle",
+    "walk",
+    "talk",
+    "hurt"
+  ],
+  "productionNote": "This is a typed first pass. Promote important characters to rig-baked folders when their gameplay role needs stronger acting."
+}

@@ -1,0 +1,288 @@
+{
+  "schemaVersion": 2,
+  "id": "monster_worm",
+  "typeFolder": "monsters",
+  "defaultAnchor": {
+    "x": 0.5,
+    "y": 0.96
+  },
+  "notes": "First-pass typed motion pack generated from the character source sprite. Keeps a stable foot/contact anchor and separates frames for future hand polish.",
+  "animations": {
+    "idle": {
+      "strip": "idle_strip.png",
+      "frames": 4,
+      "fps": 8,
+      "loop": true,
+      "frameWidth": 211,
+      "frameHeight": 258,
+      "frameFiles": [
+        "animations/idle/frame_00.png",
+        "animations/idle/frame_01.png",
+        "animations/idle/frame_02.png",
+        "animations/idle/frame_03.png"
+      ],
+      "framesData": [
+        {
+          "index": 0,
+          "file": "animations/idle/frame_00.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 1,
+          "file": "animations/idle/frame_01.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 2,
+          "file": "animations/idle/frame_02.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 3,
+          "file": "animations/idle/frame_03.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.125
+        }
+      ]
+    },
+    "walk": {
+      "strip": "walk_strip.png",
+      "frames": 6,
+      "fps": 10,
+      "loop": true,
+      "frameWidth": 211,
+      "frameHeight": 258,
+      "frameFiles": [
+        "animations/walk/frame_00.png",
+        "animations/walk/frame_01.png",
+        "animations/walk/frame_02.png",
+        "animations/walk/frame_03.png",
+        "animations/walk/frame_04.png",
+        "animations/walk/frame_05.png"
+      ],
+      "framesData": [
+        {
+          "index": 0,
+          "file": "animations/walk/frame_00.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1
+        },
+        {
+          "index": 1,
+          "file": "animations/walk/frame_01.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1
+        },
+        {
+          "index": 2,
+          "file": "animations/walk/frame_02.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1
+        },
+        {
+          "index": 3,
+          "file": "animations/walk/frame_03.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1
+        },
+        {
+          "index": 4,
+          "file": "animations/walk/frame_04.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1
+        },
+        {
+          "index": 5,
+          "file": "animations/walk/frame_05.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1
+        }
+      ]
+    },
+    "talk": {
+      "strip": "talk_strip.png",
+      "frames": 6,
+      "fps": 9,
+      "loop": true,
+      "frameWidth": 211,
+      "frameHeight": 258,
+      "frameFiles": [
+        "animations/talk/frame_00.png",
+        "animations/talk/frame_01.png",
+        "animations/talk/frame_02.png",
+        "animations/talk/frame_03.png",
+        "animations/talk/frame_04.png",
+        "animations/talk/frame_05.png"
+      ],
+      "framesData": [
+        {
+          "index": 0,
+          "file": "animations/talk/frame_00.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1111111111111111
+        },
+        {
+          "index": 1,
+          "file": "animations/talk/frame_01.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1111111111111111
+        },
+        {
+          "index": 2,
+          "file": "animations/talk/frame_02.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1111111111111111
+        },
+        {
+          "index": 3,
+          "file": "animations/talk/frame_03.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1111111111111111
+        },
+        {
+          "index": 4,
+          "file": "animations/talk/frame_04.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1111111111111111
+        },
+        {
+          "index": 5,
+          "file": "animations/talk/frame_05.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1111111111111111
+        }
+      ]
+    },
+    "hurt": {
+      "strip": "hurt_strip.png",
+      "frames": 3,
+      "fps": 12,
+      "loop": false,
+      "frameWidth": 211,
+      "frameHeight": 258,
+      "frameFiles": [
+        "animations/hurt/frame_00.png",
+        "animations/hurt/frame_01.png",
+        "animations/hurt/frame_02.png"
+      ],
+      "framesData": [
+        {
+          "index": 0,
+          "file": "animations/hurt/frame_00.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.08333333333333333
+        },
+        {
+          "index": 1,
+          "file": "animations/hurt/frame_01.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.08333333333333333
+        },
+        {
+          "index": 2,
+          "file": "animations/hurt/frame_02.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.96,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.08333333333333333
+        }
+      ]
+    }
+  }
+}

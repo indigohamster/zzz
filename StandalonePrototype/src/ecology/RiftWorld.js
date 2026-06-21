@@ -6,8 +6,8 @@ import { createCreatureInstance, updateCreatureAI, damageCreature } from "./Crea
 import { CREATURE_CATALOG } from "./CreatureCatalog.js?v=1";
 import { tryJackpot } from "./DiscoveryItems.js";
 import { RIFT_TYPES } from "./CanvasRift.js";
-import { drawCenteredModelSprite } from "../core/SpriteAssets.js?v=3";
-import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=28";
+import { drawCenteredModelSprite } from "../core/SpriteAssets.js?v=21";
+import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=47";
 
 const SW = 640, SH = 360;
 
@@ -344,6 +344,8 @@ export function createRiftWorld(typeId, onComplete, nestDepth = 0) {
     if (cat.spriteId && drawCenteredModelSprite(ctx, cat.spriteId, x, y, {
       height: cat.spriteHeight ?? Math.max(cat.size.w, cat.size.h) * 2,
       alpha: template ? 0.92 : 1,
+      motion: template ? "hostile" : "float",
+      accent: template ? "#c9a8d8" : cat.color,
     })) {
       return;
     }

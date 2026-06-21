@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "id": "protagonist",
+  "displayName": "Protagonist",
+  "kind": "hero",
+  "accent": "#7dd3fc",
+  "restHeight": 60,
+  "anchor": {
+    "x": 0.5,
+    "y": 0.965
+  },
+  "assets": {
+    "base": "base.png",
+    "icon": "icon.png",
+    "portrait": "portrait.png",
+    "silhouette": "silhouette.png",
+    "modelSheet": "model_sheet.png",
+    "frameData": "frame_data.json",
+    "anchorPreview": "anchor_preview.png",
+    "motionSheet": "motion_sheet.png",
+    "sideMotionSource": "turnaround/side_motion_source.png",
+    "rig": "rig/rig.json"
+  },
+  "animations": {
+    "idle": {
+      "file": "idle_strip.png",
+      "frames": 8,
+      "fps": 8,
+      "loop": true,
+      "frameFiles": [
+        "animations/idle/frame_00.png",
+        "animations/idle/frame_01.png",
+        "animations/idle/frame_02.png",
+        "animations/idle/frame_03.png",
+        "animations/idle/frame_04.png",
+        "animations/idle/frame_05.png",
+        "animations/idle/frame_06.png",
+        "animations/idle/frame_07.png"
+      ],
+      "frameData": "frame_data.json",
+      "anchorMode": "per-frame"
+    },
+    "walk": {
+      "file": "walk_strip.png",
+      "frames": 12,
+      "fps": 12,
+      "loop": true,
+      "frameFiles": [
+        "animations/walk/frame_00.png",
+        "animations/walk/frame_01.png",
+        "animations/walk/frame_02.png",
+        "animations/walk/frame_03.png",
+        "animations/walk/frame_04.png",
+        "animations/walk/frame_05.png",
+        "animations/walk/frame_06.png",
+        "animations/walk/frame_07.png",
+        "animations/walk/frame_08.png",
+        "animations/walk/frame_09.png",
+        "animations/walk/frame_10.png",
+        "animations/walk/frame_11.png"
+      ],
+      "frameData": "frame_data.json",
+      "anchorMode": "per-frame"
+    },
+    "run": {
+      "file": "run_strip.png",
+      "frames": 12,
+      "fps": 15,
+      "loop": true,
+      "frameFiles": [
+        "animations/run/frame_00.png",
+        "animations/run/frame_01.png",
+        "animations/run/frame_02.png",
+        "animations/run/frame_03.png",
+        "animations/run/frame_04.png",
+        "animations/run/frame_05.png",
+        "animations/run/frame_06.png",
+        "animations/run/frame_07.png",
+        "animations/run/frame_08.png",
+        "animations/run/frame_09.png",
+        "animations/run/frame_10.png",
+        "animations/run/frame_11.png"
+      ],
+      "frameData": "frame_data.json",
+      "anchorMode": "per-frame"
+    },
+    "draw": {
+      "file": "draw_strip.png",
+      "frames": 8,
+      "fps": 8,
+      "loop": true,
+      "frameFiles": [
+        "animations/draw/frame_00.png",
+        "animations/draw/frame_01.png",
+        "animations/draw/frame_02.png",
+        "animations/draw/frame_03.png",
+        "animations/draw/frame_04.png",
+        "animations/draw/frame_05.png",
+        "animations/draw/frame_06.png",
+        "animations/draw/frame_07.png"
+      ],
+      "frameData": "frame_data.json",
+      "anchorMode": "per-frame"
+    },
+    "jump": {
+      "file": "jump_strip.png",
+      "frames": 6,
+      "fps": 10,
+      "loop": false,
+      "frameFiles": [
+        "animations/jump/frame_00.png",
+        "animations/jump/frame_01.png",
+        "animations/jump/frame_02.png",
+        "animations/jump/frame_03.png",
+        "animations/jump/frame_04.png",
+        "animations/jump/frame_05.png"
+      ],
+      "frameData": "frame_data.json",
+      "anchorMode": "per-frame",
+      "source": "rig-baked"
+    },
+    "hurt": {
+      "file": "hurt_strip.png",
+      "frames": 4,
+      "fps": 12,
+      "loop": false,
+      "frameFiles": [
+        "animations/hurt/frame_00.png",
+        "animations/hurt/frame_01.png",
+        "animations/hurt/frame_02.png",
+        "animations/hurt/frame_03.png"
+      ],
+      "frameData": "frame_data.json",
+      "anchorMode": "per-frame"
+    }
+  },
+  "runtimeFallback": "layered-base",
+  "turnaround": {
+    "front": "turnaround/front.png",
+    "back": "turnaround/back.png",
+    "drawing": "turnaround/drawing.png",
+    "frontReference": "turnaround/front_reference.png",
+    "backReference": "turnaround/back_reference.png",
+    "drawingReference": "turnaround/drawing_reference.png",
+    "strip": "turnaround/turnaround_strip.png",
+    "frames": 3
+  },
+  "variants": {
+    "front": "turnaround/front.png",
+    "back": "turnaround/back.png",
+    "drawing": "turnaround/drawing.png"
+  },
+  "polishLevel": "refined-protagonist-v10-rig-baked-jump",
+  "anchorSystem": "per-frame-foot-anchor-v1"
+}

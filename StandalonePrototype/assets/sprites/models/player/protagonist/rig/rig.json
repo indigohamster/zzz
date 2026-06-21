@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "id": "protagonist",
+  "source": "turnaround/side_motion_source.png",
+  "frameSize": [
+    239,
+    470
+  ],
+  "defaultAnchor": {
+    "x": 0.5,
+    "y": 0.965
+  },
+  "notes": "Prototype 2D rig for baking pixel frames. Pivots are local part coordinates; attach points are frame coordinates in the neutral side pose.",
+  "parts": {
+    "tank": {
+      "box": [
+        124,
+        134,
+        211,
+        306
+      ],
+      "pivot": [
+        42,
+        70
+      ],
+      "attach": [
+        144,
+        180
+      ],
+      "layer": 0,
+      "file": "parts/tank.png",
+      "size": [
+        87,
+        172
+      ]
+    },
+    "back_leg": {
+      "box": [
+        100,
+        258,
+        184,
+        470
+      ],
+      "pivot": [
+        34,
+        18
+      ],
+      "attach": [
+        112,
+        270
+      ],
+      "layer": 1,
+      "file": "parts/back_leg.png",
+      "size": [
+        84,
+        212
+      ]
+    },
+    "front_leg": {
+      "box": [
+        46,
+        258,
+        132,
+        470
+      ],
+      "pivot": [
+        50,
+        18
+      ],
+      "attach": [
+        102,
+        270
+      ],
+      "layer": 2,
+      "file": "parts/front_leg.png",
+      "size": [
+        86,
+        212
+      ]
+    },
+    "torso": {
+      "box": [
+        45,
+        120,
+        176,
+        314
+      ],
+      "pivot": [
+        68,
+        132
+      ],
+      "attach": [
+        112,
+        250
+      ],
+      "layer": 3,
+      "file": "parts/torso.png",
+      "size": [
+        131,
+        194
+      ]
+    },
+    "back_arm": {
+      "box": [
+        112,
+        148,
+        194,
+        316
+      ],
+      "pivot": [
+        18,
+        28
+      ],
+      "attach": [
+        128,
+        168
+      ],
+      "layer": 4,
+      "file": "parts/back_arm.png",
+      "size": [
+        82,
+        168
+      ]
+    },
+    "front_arm": {
+      "box": [
+        26,
+        148,
+        122,
+        316
+      ],
+      "pivot": [
+        72,
+        30
+      ],
+      "attach": [
+        86,
+        170
+      ],
+      "layer": 5,
+      "file": "parts/front_arm.png",
+      "size": [
+        96,
+        168
+      ]
+    },
+    "head": {
+      "box": [
+        34,
+        34,
+        150,
+        150
+      ],
+      "pivot": [
+        66,
+        96
+      ],
+      "attach": [
+        104,
+        132
+      ],
+      "layer": 6,
+      "file": "parts/head.png",
+      "size": [
+        116,
+        116
+      ]
+    }
+  },
+  "animations": {
+    "jump": {
+      "method": "baked-rig",
+      "frames": 6,
+      "poses": [
+        "compress",
+        "takeoff",
+        "rise",
+        "apex",
+        "fall",
+        "land"
+      ]
+    }
+  }
+}

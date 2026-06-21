@@ -2,8 +2,8 @@
 // Walkable rental room → old sketchbook → Inkdot emerges → ink spread → enter ink realm.
 import { H, W } from "../core/config.js?v=27";
 import { label } from "../core/render.js";
-import { drawBottomPrompt, drawInteractionHint, pixelLabel } from "./StudioRoom.js?v=6";
-import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=28";
+import { drawBottomPrompt, drawInteractionHint, pixelLabel } from "./StudioRoom.js?v=25";
+import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=47";
 
 // ---- Constants ----
 const PHASE = {

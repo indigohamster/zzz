@@ -1,6 +1,6 @@
 ﻿import { H, W } from "../core/config.js?v=27";
 import { label } from "../core/render.js";
-import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=28";
+import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=47";
 
 const COLORS = {
   ink: "#05070b",

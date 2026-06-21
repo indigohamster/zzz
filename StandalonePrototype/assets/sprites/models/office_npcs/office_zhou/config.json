@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 2,
+  "id": "office_zhou",
+  "displayName": "Zhou",
+  "kind": "office",
+  "accent": "#f2b84b",
+  "restHeight": 58,
+  "anchor": {
+    "x": 0.5,
+    "y": 0.96
+  },
+  "assets": {
+    "base": "base.png",
+    "icon": "icon.png",
+    "portrait": "portrait.png",
+    "silhouette": "silhouette.png"
+  },
+  "animations": {
+    "idle": {
+      "file": "idle_strip.png",
+      "frames": 4,
+      "fps": 8,
+      "loop": true,
+      "frameData": "frame_data.json",
+      "anchorMode": "per-frame"
+    },
+    "walk": {
+      "file": "walk_strip.png",
+      "frames": 6,
+      "fps": 10,
+      "loop": true,
+      "frameData": "frame_data.json",
+      "anchorMode": "per-frame"
+    },
+    "float": {
+      "file": "idle_strip.png",
+      "frames": 4,
+      "fps": 7,
+      "loop": true,
+      "frameData": "frame_data.json",
+      "anchorMode": "per-frame"
+    },
+    "hostile": {
+      "file": "walk_strip.png",
+      "frames": 6,
+      "fps": 9,
+      "loop": true,
+      "frameData": "frame_data.json",
+      "anchorMode": "per-frame"
+    },
+    "boss": {
+      "file": "idle_strip.png",
+      "frames": 4,
+      "fps": 6,
+      "loop": true,
+      "frameData": "frame_data.json",
+      "anchorMode": "per-frame"
+    },
+    "hurt": {
+      "file": "hurt_strip.png",
+      "frames": 3,
+      "fps": 12,
+      "loop": false,
+      "frameData": "frame_data.json",
+      "anchorMode": "per-frame"
+    },
+    "talk": {
+      "file": "talk_strip.png",
+      "frames": 6,
+      "fps": 9,
+      "loop": true,
+      "frameData": "frame_data.json",
+      "anchorMode": "per-frame"
+    }
+  },
+  "runtimeFallback": "typed-motion-pack",
+  "typeFolder": "office_npcs"
+}

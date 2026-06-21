@@ -1,0 +1,695 @@
+{
+  "schemaVersion": 8,
+  "id": "protagonist",
+  "defaultAnchor": {
+    "x": 0.5,
+    "y": 0.965
+  },
+  "notes": "Side-view locomotion frames. Jump is baked from protagonist rig parts; physics controls vertical travel and runtime selects pose by vertical velocity.",
+  "animations": {
+    "idle": {
+      "strip": "idle_strip.png",
+      "frames": 8,
+      "fps": 8,
+      "loop": true,
+      "frameWidth": 239,
+      "frameHeight": 470,
+      "frameFiles": [
+        "animations/idle/frame_00.png",
+        "animations/idle/frame_01.png",
+        "animations/idle/frame_02.png",
+        "animations/idle/frame_03.png",
+        "animations/idle/frame_04.png",
+        "animations/idle/frame_05.png",
+        "animations/idle/frame_06.png",
+        "animations/idle/frame_07.png"
+      ],
+      "framesData": [
+        {
+          "index": 0,
+          "file": "animations/idle/frame_00.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": -1
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 1,
+          "file": "animations/idle/frame_01.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 1,
+            "offsetY": -2
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 2,
+          "file": "animations/idle/frame_02.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 1,
+            "offsetY": -2
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 3,
+          "file": "animations/idle/frame_03.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": -2
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 4,
+          "file": "animations/idle/frame_04.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": -1
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 5,
+          "file": "animations/idle/frame_05.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -1,
+            "offsetY": -1
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 6,
+          "file": "animations/idle/frame_06.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -1,
+            "offsetY": 0
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 7,
+          "file": "animations/idle/frame_07.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": -1
+          },
+          "duration": 0.125
+        }
+      ]
+    },
+    "walk": {
+      "strip": "walk_strip.png",
+      "frames": 12,
+      "fps": 12,
+      "loop": true,
+      "frameWidth": 239,
+      "frameHeight": 470,
+      "frameFiles": [
+        "animations/walk/frame_00.png",
+        "animations/walk/frame_01.png",
+        "animations/walk/frame_02.png",
+        "animations/walk/frame_03.png",
+        "animations/walk/frame_04.png",
+        "animations/walk/frame_05.png",
+        "animations/walk/frame_06.png",
+        "animations/walk/frame_07.png",
+        "animations/walk/frame_08.png",
+        "animations/walk/frame_09.png",
+        "animations/walk/frame_10.png",
+        "animations/walk/frame_11.png"
+      ],
+      "framesData": [
+        {
+          "index": 0,
+          "file": "animations/walk/frame_00.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": -1
+          },
+          "duration": 0.0833
+        },
+        {
+          "index": 1,
+          "file": "animations/walk/frame_01.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 1,
+            "offsetY": -1
+          },
+          "duration": 0.0833
+        },
+        {
+          "index": 2,
+          "file": "animations/walk/frame_02.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 2,
+            "offsetY": -1
+          },
+          "duration": 0.0833
+        },
+        {
+          "index": 3,
+          "file": "animations/walk/frame_03.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 2,
+            "offsetY": 0
+          },
+          "duration": 0.0833
+        },
+        {
+          "index": 4,
+          "file": "animations/walk/frame_04.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 2,
+            "offsetY": 0
+          },
+          "duration": 0.0833
+        },
+        {
+          "index": 5,
+          "file": "animations/walk/frame_05.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 1,
+            "offsetY": -1
+          },
+          "duration": 0.0833
+        },
+        {
+          "index": 6,
+          "file": "animations/walk/frame_06.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": -1
+          },
+          "duration": 0.0833
+        },
+        {
+          "index": 7,
+          "file": "animations/walk/frame_07.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -1,
+            "offsetY": -1
+          },
+          "duration": 0.0833
+        },
+        {
+          "index": 8,
+          "file": "animations/walk/frame_08.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -2,
+            "offsetY": -1
+          },
+          "duration": 0.0833
+        },
+        {
+          "index": 9,
+          "file": "animations/walk/frame_09.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -2,
+            "offsetY": 0
+          },
+          "duration": 0.0833
+        },
+        {
+          "index": 10,
+          "file": "animations/walk/frame_10.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -2,
+            "offsetY": -1
+          },
+          "duration": 0.0833
+        },
+        {
+          "index": 11,
+          "file": "animations/walk/frame_11.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -1,
+            "offsetY": -1
+          },
+          "duration": 0.0833
+        }
+      ]
+    },
+    "run": {
+      "strip": "run_strip.png",
+      "frames": 12,
+      "fps": 15,
+      "loop": true,
+      "frameWidth": 239,
+      "frameHeight": 470,
+      "frameFiles": [
+        "animations/run/frame_00.png",
+        "animations/run/frame_01.png",
+        "animations/run/frame_02.png",
+        "animations/run/frame_03.png",
+        "animations/run/frame_04.png",
+        "animations/run/frame_05.png",
+        "animations/run/frame_06.png",
+        "animations/run/frame_07.png",
+        "animations/run/frame_08.png",
+        "animations/run/frame_09.png",
+        "animations/run/frame_10.png",
+        "animations/run/frame_11.png"
+      ],
+      "framesData": [
+        {
+          "index": 0,
+          "file": "animations/run/frame_00.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": -1
+          },
+          "duration": 0.0667
+        },
+        {
+          "index": 1,
+          "file": "animations/run/frame_01.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 1,
+            "offsetY": -1
+          },
+          "duration": 0.0667
+        },
+        {
+          "index": 2,
+          "file": "animations/run/frame_02.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 2,
+            "offsetY": -1
+          },
+          "duration": 0.0667
+        },
+        {
+          "index": 3,
+          "file": "animations/run/frame_03.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 2,
+            "offsetY": 0
+          },
+          "duration": 0.0667
+        },
+        {
+          "index": 4,
+          "file": "animations/run/frame_04.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 2,
+            "offsetY": 0
+          },
+          "duration": 0.0667
+        },
+        {
+          "index": 5,
+          "file": "animations/run/frame_05.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 1,
+            "offsetY": -1
+          },
+          "duration": 0.0667
+        },
+        {
+          "index": 6,
+          "file": "animations/run/frame_06.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": -1
+          },
+          "duration": 0.0667
+        },
+        {
+          "index": 7,
+          "file": "animations/run/frame_07.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -1,
+            "offsetY": -1
+          },
+          "duration": 0.0667
+        },
+        {
+          "index": 8,
+          "file": "animations/run/frame_08.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -2,
+            "offsetY": -1
+          },
+          "duration": 0.0667
+        },
+        {
+          "index": 9,
+          "file": "animations/run/frame_09.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -2,
+            "offsetY": 0
+          },
+          "duration": 0.0667
+        },
+        {
+          "index": 10,
+          "file": "animations/run/frame_10.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -2,
+            "offsetY": -1
+          },
+          "duration": 0.0667
+        },
+        {
+          "index": 11,
+          "file": "animations/run/frame_11.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -1,
+            "offsetY": -1
+          },
+          "duration": 0.0667
+        }
+      ]
+    },
+    "draw": {
+      "strip": "draw_strip.png",
+      "frames": 8,
+      "fps": 8,
+      "loop": true,
+      "frameWidth": 239,
+      "frameHeight": 470,
+      "frameFiles": [
+        "animations/draw/frame_00.png",
+        "animations/draw/frame_01.png",
+        "animations/draw/frame_02.png",
+        "animations/draw/frame_03.png",
+        "animations/draw/frame_04.png",
+        "animations/draw/frame_05.png",
+        "animations/draw/frame_06.png",
+        "animations/draw/frame_07.png"
+      ],
+      "framesData": [
+        {
+          "index": 0,
+          "file": "animations/draw/frame_00.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": -2
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 1,
+          "file": "animations/draw/frame_01.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 2,
+            "offsetY": -2
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 2,
+          "file": "animations/draw/frame_02.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 2,
+            "offsetY": -3
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 3,
+          "file": "animations/draw/frame_03.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 2,
+            "offsetY": -3
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 4,
+          "file": "animations/draw/frame_04.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": -3
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 5,
+          "file": "animations/draw/frame_05.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -2,
+            "offsetY": -2
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 6,
+          "file": "animations/draw/frame_06.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -3,
+            "offsetY": -2
+          },
+          "duration": 0.125
+        },
+        {
+          "index": 7,
+          "file": "animations/draw/frame_07.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -2,
+            "offsetY": -1
+          },
+          "duration": 0.125
+        }
+      ]
+    },
+    "jump": {
+      "strip": "jump_strip.png",
+      "frames": 6,
+      "fps": 10,
+      "loop": false,
+      "frameWidth": 239,
+      "frameHeight": 470,
+      "frameFiles": [
+        "animations/jump/frame_00.png",
+        "animations/jump/frame_01.png",
+        "animations/jump/frame_02.png",
+        "animations/jump/frame_03.png",
+        "animations/jump/frame_04.png",
+        "animations/jump/frame_05.png"
+      ],
+      "framesData": [
+        {
+          "index": 0,
+          "file": "animations/jump/frame_00.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": 1
+          },
+          "duration": 0.1,
+          "pose": "compress",
+          "source": "rig"
+        },
+        {
+          "index": 1,
+          "file": "animations/jump/frame_01.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1,
+          "pose": "takeoff",
+          "source": "rig"
+        },
+        {
+          "index": 2,
+          "file": "animations/jump/frame_02.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1,
+          "pose": "rise",
+          "source": "rig"
+        },
+        {
+          "index": 3,
+          "file": "animations/jump/frame_03.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1,
+          "pose": "apex",
+          "source": "rig"
+        },
+        {
+          "index": 4,
+          "file": "animations/jump/frame_04.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.1,
+          "pose": "fall",
+          "source": "rig"
+        },
+        {
+          "index": 5,
+          "file": "animations/jump/frame_05.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": 1
+          },
+          "duration": 0.1,
+          "pose": "land",
+          "source": "rig"
+        }
+      ]
+    },
+    "hurt": {
+      "strip": "hurt_strip.png",
+      "frames": 4,
+      "fps": 12,
+      "loop": false,
+      "frameWidth": 239,
+      "frameHeight": 470,
+      "frameFiles": [
+        "animations/hurt/frame_00.png",
+        "animations/hurt/frame_01.png",
+        "animations/hurt/frame_02.png",
+        "animations/hurt/frame_03.png"
+      ],
+      "framesData": [
+        {
+          "index": 0,
+          "file": "animations/hurt/frame_00.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 3,
+            "offsetY": 0
+          },
+          "duration": 0.0833
+        },
+        {
+          "index": 1,
+          "file": "animations/hurt/frame_01.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": -4,
+            "offsetY": 0
+          },
+          "duration": 0.0833
+        },
+        {
+          "index": 2,
+          "file": "animations/hurt/frame_02.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 1,
+            "offsetY": 0
+          },
+          "duration": 0.0833
+        },
+        {
+          "index": 3,
+          "file": "animations/hurt/frame_03.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 0.965,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "duration": 0.0833
+        }
+      ]
+    }
+  }
+}

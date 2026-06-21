@@ -1,6 +1,6 @@
 import { H, W } from "./core/config.js?v=27";
 import { drawPaperBackground, drawPixelFrame, label } from "./core/render.js?v=27";
-import { drawModelSprite, preloadModelSprites } from "./core/SpriteAssets.js?v=3";
+import { drawModelSprite, preloadModelSprites } from "./core/SpriteAssets.js?v=21";
 import { createDrawingCanvas } from "./features/drawing/DrawingCanvas.js?v=25";
 import { drawWeaponResultPanel, weaponResultEnterButton } from "./features/drawing/WeaponResultPanel.js?v=26";
 import { createDayCycle } from "./game/DayCycle.js?v=25";
@@ -10,12 +10,12 @@ import { validateWeaponProfile } from "./game/WeaponProfile.js?v=32";
 import { generateRelicChoices } from "./game/builds/RewardGenerator.js?v=32";
 import { getWeaponTypeFromProfile } from "./game/builds/WeaponArchetypes.js?v=32";
 import { formatGateConsequenceLine } from "./ecology/GateConsequences.js";
-import { createInkwellScene } from "./scenes/inkwell.js?v=55";
+import { createInkwellScene } from "./scenes/inkwell.js?v=74";
 import { createOpeningScene } from "./scenes/OpeningScene.js";
-import { createChapter0Scene } from "./scenes/Chapter0.js?v=6";
+import { createChapter0Scene } from "./scenes/Chapter0.js?v=25";
 import { createShopState, buyShopItem, getAllShopItems, getCategories, getItemsByCategory } from "./game/ShopSystem.js";
-import { createInkwellExperiment } from "./scenes/InkwellExperiment.js?v=3";
-import { drawPixelPersonAt, drawProtagonistAt } from "./characters/protagonist/ProtagonistSprite.js?v=28";
+import { createInkwellExperiment } from "./scenes/InkwellExperiment.js?v=22";
+import { drawPixelPersonAt, drawProtagonistAt } from "./characters/protagonist/ProtagonistSprite.js?v=47";
 import {
   drawBottomPrompt,
   drawDrawingBoard,
@@ -26,7 +26,7 @@ import {
   drawStudioRoom,
   drawStudioSketchbook,
   pixelLabel,
-} from "./scenes/StudioRoom.js?v=6";
+} from "./scenes/StudioRoom.js?v=25";
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -1223,6 +1223,9 @@ function drawOfficeNpcAt(ctx, npc, options = {}) {
     height: 58,
     facing: flip,
     alpha: used ? 0.58 : 1,
+    frame: frameValue,
+    motion: active ? "talk" : "idle",
+    accent,
   })) {
     if (active) {
       ctx.strokeStyle = accent;
@@ -1693,7 +1696,13 @@ function drawShopkeeper(x, y) {
   ctx.fillRect(x - 50, y + 42, 100, 24);
   ctx.fillStyle = "#151a22";
   ctx.fillRect(x - 46, y + 46, 92, 16);
-  if (!drawModelSprite(ctx, "supply_keeper", x, y + 62, { height: 150, facing: -1 })) {
+  if (!drawModelSprite(ctx, "supply_keeper", x, y + 62, {
+    height: 150,
+    facing: -1,
+    frame,
+    motion: "idle",
+    accent: "#f2b84b",
+  })) {
     drawPixelPersonAt(ctx, {
       x,
       footY: y + 50,

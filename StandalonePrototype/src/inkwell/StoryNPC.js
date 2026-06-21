@@ -1,6 +1,6 @@
 import { H, TILE, W } from "../core/config.js?v=27";
-import { drawModelSprite } from "../core/SpriteAssets.js?v=3";
-import { drawInkCompanionAt, drawPixelPersonAt } from "../characters/protagonist/ProtagonistSprite.js?v=28";
+import { drawModelSprite } from "../core/SpriteAssets.js?v=21";
+import { drawInkCompanionAt, drawPixelPersonAt } from "../characters/protagonist/ProtagonistSprite.js?v=47";
 
 const TALK_RANGE = 54;
 
@@ -311,6 +311,9 @@ function drawNpc(ctx, npc, x, y, frame = 0) {
     const rendered = drawModelSprite(ctx, spriteId, x, footY, {
       height: storyNpcSpriteHeight(npc),
       facing: npc.facing,
+      frame,
+      motion: storyNpcMotion(npc),
+      accent: npc.accent,
     });
     if (!rendered) {
       drawPixelPersonAt(ctx, {
@@ -347,6 +350,13 @@ function storyNpcSpriteHeight(npc) {
   if (npc.id === "deleted_character") return 54;
   if (npc.id === "zhou_redline") return 66;
   return 46;
+}
+
+function storyNpcMotion(npc) {
+  if (npc.role === "rift") return "float";
+  if (npc.role === "pressure") return "hostile";
+  if (npc.role === "shop") return "idle";
+  return "idle";
 }
 
 function drawTalkPrompt(ctx, npc, x, y, promptPulse = 0) {
