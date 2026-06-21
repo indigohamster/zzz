@@ -3,10 +3,11 @@
 // 更新：添加 worldState.finished 信号供父场景检测完成
 
 import { createCreatureInstance, updateCreatureAI, damageCreature } from "./CreatureAI.js";
-import { CREATURE_CATALOG } from "./CreatureCatalog.js";
+import { CREATURE_CATALOG } from "./CreatureCatalog.js?v=1";
 import { tryJackpot } from "./DiscoveryItems.js";
 import { RIFT_TYPES } from "./CanvasRift.js";
-import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=26";
+import { drawCenteredModelSprite } from "../core/SpriteAssets.js?v=2";
+import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=28";
 
 const SW = 640, SH = 360;
 
@@ -340,6 +341,12 @@ export function createRiftWorld(typeId, onComplete, nestDepth = 0) {
   }
 
   function drawRiftCreature(ctx, x, y, cat, template) {
+    if (cat.spriteId && drawCenteredModelSprite(ctx, cat.spriteId, x, y, {
+      height: cat.spriteHeight ?? Math.max(cat.size.w, cat.size.h) * 2,
+      alpha: template ? 0.92 : 1,
+    })) {
+      return;
+    }
     const w = Math.floor(cat.size.w);
     const h = Math.floor(cat.size.h);
     const sx = Math.floor(x - w / 2);

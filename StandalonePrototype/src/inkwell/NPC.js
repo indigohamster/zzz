@@ -1,7 +1,8 @@
 import { TILE } from "../core/config.js?v=27";
 import { GRAVITY, MAX_FALL } from "./InkwellConfig.js?v=2";
-import { pickBossVariant } from "./BossCatalog.js?v=24";
-import { pickMonsterForRoom } from "./MonsterCatalog.js";
+import { pickBossVariant } from "./BossCatalog.js?v=25";
+import { pickMonsterForRoom } from "./MonsterCatalog.js?v=1";
+import { drawModelSprite } from "../core/SpriteAssets.js?v=2";
 
 export function createNpcManager({ physics, player, run, tileMap, combat, gameState }) {
   const npcs = [];
@@ -92,6 +93,8 @@ export function createNpcManager({ physics, player, run, tileMap, combat, gameSt
       ...pickEnemyArchetype(roomType),
       color,
       eye: "#f7f0df",
+      spriteId: "sketchling",
+      spriteHeight: 40,
       contactDamage: 6,
       inkDrain: 4,
       behavior: "leaper",
@@ -359,6 +362,7 @@ export function createNpcManager({ physics, player, run, tileMap, combat, gameSt
   }
 
   function drawNpcBody(ctx, npc, x, y) {
+    if (drawEnemySprite(ctx, npc, x, y)) return;
     if (npc.boss) {
       drawBossBody(ctx, npc, x, y);
       return;
@@ -370,6 +374,17 @@ export function createNpcManager({ physics, player, run, tileMap, combat, gameSt
     else if (id === "paper_kite") drawPaperKite(ctx, npc, x, y);
     else if (id === "blot_sentinel") drawBlotSentinel(ctx, npc, x, y);
     else drawSketchling(ctx, npc, x, y);
+  }
+
+  function drawEnemySprite(ctx, npc, x, y) {
+    const spriteId = npc.boss ? npc.variant?.spriteId : npc.archetype?.spriteId;
+    if (!spriteId) return false;
+    const height = npc.boss ? (npc.variant?.spriteHeight ?? 86) : (npc.archetype?.spriteHeight ?? 40);
+    return drawModelSprite(ctx, spriteId, x, y + npc.h / 2 + (npc.boss ? 8 : 5), {
+      height,
+      facing: npc.facing,
+      alpha: npc.hurt > 0 ? 0.82 : 1,
+    });
   }
 
   function drawEnemyAura(ctx, npc, x, y) {

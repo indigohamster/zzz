@@ -1,5 +1,6 @@
 import { H, W } from "./core/config.js?v=27";
 import { drawPaperBackground, drawPixelFrame, label } from "./core/render.js?v=27";
+import { drawModelSprite, preloadModelSprites } from "./core/SpriteAssets.js?v=2";
 import { createDrawingCanvas } from "./features/drawing/DrawingCanvas.js?v=25";
 import { drawWeaponResultPanel, weaponResultEnterButton } from "./features/drawing/WeaponResultPanel.js?v=26";
 import { createDayCycle } from "./game/DayCycle.js?v=25";
@@ -9,12 +10,12 @@ import { validateWeaponProfile } from "./game/WeaponProfile.js?v=32";
 import { generateRelicChoices } from "./game/builds/RewardGenerator.js?v=32";
 import { getWeaponTypeFromProfile } from "./game/builds/WeaponArchetypes.js?v=32";
 import { formatGateConsequenceLine } from "./ecology/GateConsequences.js";
-import { createInkwellScene } from "./scenes/inkwell.js?v=52";
+import { createInkwellScene } from "./scenes/inkwell.js?v=55";
 import { createOpeningScene } from "./scenes/OpeningScene.js";
-import { createChapter0Scene } from "./scenes/Chapter0.js?v=4";
+import { createChapter0Scene } from "./scenes/Chapter0.js?v=6";
 import { createShopState, buyShopItem, getAllShopItems, getCategories, getItemsByCategory } from "./game/ShopSystem.js";
-import { createInkwellExperiment } from "./scenes/InkwellExperiment.js?v=2";
-import { drawPixelPersonAt, drawProtagonistAt } from "./characters/protagonist/ProtagonistSprite.js?v=26";
+import { createInkwellExperiment } from "./scenes/InkwellExperiment.js?v=3";
+import { drawPixelPersonAt, drawProtagonistAt } from "./characters/protagonist/ProtagonistSprite.js?v=28";
 import {
   drawBottomPrompt,
   drawDrawingBoard,
@@ -25,11 +26,12 @@ import {
   drawStudioRoom,
   drawStudioSketchbook,
   pixelLabel,
-} from "./scenes/StudioRoom.js?v=4";
+} from "./scenes/StudioRoom.js?v=6";
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
+preloadModelSprites();
 
 const keys = new Set();
 const mouse = { x: 0, y: 0, left: false, right: false, justLeft: false, justRight: false };
@@ -1217,6 +1219,17 @@ function drawOfficeNpcAt(ctx, npc, options = {}) {
 
   ctx.fillStyle = active ? "rgba(240,217,165,0.24)" : "rgba(5,7,11,0.36)";
   ctx.fillRect(x - 18, footY - 2, 36, 5);
+  if (drawModelSprite(ctx, companyNpcSpriteId(npc.id), x, footY + bob, {
+    height: 58,
+    facing: flip,
+    alpha: used ? 0.58 : 1,
+  })) {
+    if (active) {
+      ctx.strokeStyle = accent;
+      ctx.strokeRect(x - 23.5, footY - 64.5 + bob, 47, 69);
+    }
+    return;
+  }
   if (active) {
     ctx.fillStyle = accent;
     ctx.fillRect(x - 20, y - 10, 40, 2);
@@ -1228,6 +1241,14 @@ function drawOfficeNpcAt(ctx, npc, options = {}) {
   else if (npc.id === "mira") drawMiraOfficeSprite(ctx, x, y, flip, accent, used, frameValue);
   else if (npc.id === "ren") drawRenOfficeSprite(ctx, x, y, flip, accent, used, frameValue);
   else drawClientOfficeSprite(ctx, x, y, flip, accent, used, frameValue);
+}
+
+function companyNpcSpriteId(id) {
+  if (id === "zhou") return "zhou";
+  if (id === "mira") return "mira";
+  if (id === "ren") return "ren";
+  if (id === "client") return "client";
+  return "mira";
 }
 
 function drawZhouOfficeSprite(ctx, x, y, flip, accent, used, frameValue) {
@@ -1672,20 +1693,22 @@ function drawShopkeeper(x, y) {
   ctx.fillRect(x - 50, y + 42, 100, 24);
   ctx.fillStyle = "#151a22";
   ctx.fillRect(x - 46, y + 46, 92, 16);
-  drawPixelPersonAt(ctx, {
-    x,
-    footY: y + 50,
-    facing: -1,
-    frame,
-    walkSpeed: 0.08,
-    bodyColor: "#6b4b2a",
-    accentColor: "#f2b84b",
-    hairColor: "#24211f",
-    apron: true,
-    apronColor: "#7dd3fc",
-    badge: true,
-  });
-  pixelLabel(ctx, "Inkdot", x - 28, y + 88, 13, "#f0d9a5");
+  if (!drawModelSprite(ctx, "supply_keeper", x, y + 62, { height: 150, facing: -1 })) {
+    drawPixelPersonAt(ctx, {
+      x,
+      footY: y + 50,
+      facing: -1,
+      frame,
+      walkSpeed: 0.08,
+      bodyColor: "#6b4b2a",
+      accentColor: "#f2b84b",
+      hairColor: "#24211f",
+      apron: true,
+      apronColor: "#7dd3fc",
+      badge: true,
+    });
+  }
+  pixelLabel(ctx, "Supply Keeper", x - 48, y + 88, 13, "#f0d9a5");
 }
 
 function drawFeedback() {

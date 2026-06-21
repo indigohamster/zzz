@@ -1,4 +1,5 @@
 import { draw as drawWeaponSprite } from "../../inkwell/WeaponSpriteRenderer.js?v=24";
+import { drawModelSprite } from "../../core/SpriteAssets.js?v=2";
 
 const PALETTE = {
   outline: "#05070b",
@@ -59,6 +60,12 @@ export function drawProtagonistAt(ctx, options = {}) {
   const y = footY - 34 + walkBob;
 
   drawGroundShadow(ctx, x, footY);
+  if (drawModelSprite(ctx, "protagonist", x, footY, {
+    height: options.spriteHeight ?? 60,
+    facing: flip,
+  })) {
+    return y;
+  }
   drawLegs(ctx, x, y, stride);
   if (options.showTank !== false) drawInkTank(ctx, x, y, flip);
   drawBody(ctx, x, y, flip);
@@ -137,6 +144,12 @@ export function drawInkCompanionAt(ctx, options = {}) {
   const accent = options.accentColor ?? PALETTE.inkLight;
 
   drawGroundShadow(ctx, x, footY);
+  if (drawModelSprite(ctx, "inkdot", x, footY, {
+    height: options.spriteHeight ?? 30,
+    facing: flip,
+  })) {
+    return;
+  }
   rect(ctx, x - 10, y + 2, 20, 12, PALETTE.outline);
   rect(ctx, x - 8, y, 16, 14, color);
   rect(ctx, x - 6, y - 3, 5, 5, color);

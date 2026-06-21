@@ -1,11 +1,12 @@
 ﻿// SubMapScene.js — 画稿子世界场景
 // 3 种子地图类型：温馨涂鸦 / 恐怖草图 / AI 模板画稿
 
-import { CREATURE_CATALOG } from "./CreatureCatalog.js";
+import { CREATURE_CATALOG } from "./CreatureCatalog.js?v=1";
 import { createCreatureInstance, updateCreatureAI, damageCreature } from "./CreatureAI.js";
 import { rollDiscovery, tryJackpot } from "./DiscoveryItems.js";
 import { GATE_TYPES } from "./CanvasGate.js";
-import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=26";
+import { drawCenteredModelSprite } from "../core/SpriteAssets.js?v=2";
+import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=28";
 
 const SW = 640;  // 子地图视口宽度
 const SH = 360;  // 子地图视口高度
@@ -1261,6 +1262,12 @@ export function createSubMapScene(gateType, onComplete) {
   }
 
   function drawSubCreature(ctx, sx, sy, cat, hostile) {
+    if (cat.spriteId && drawCenteredModelSprite(ctx, cat.spriteId, sx, sy, {
+      height: cat.spriteHeight ?? Math.max(cat.size.w, cat.size.h) * 2,
+      alpha: hostile ? 1 : 0.92,
+    })) {
+      return;
+    }
     const w = Math.floor(cat.size.w);
     const h = Math.floor(cat.size.h);
     const x = Math.floor(sx - w / 2);

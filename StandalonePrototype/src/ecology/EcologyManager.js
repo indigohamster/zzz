@@ -1,7 +1,7 @@
 ﻿// EcologyManager.js — 墨境生态系统管理器
 // 轻量集成层，挂载到现有 inkwell 场景
 
-import { CREATURE_CATALOG, getAllCreatureIds } from "./CreatureCatalog.js";
+import { CREATURE_CATALOG, getAllCreatureIds } from "./CreatureCatalog.js?v=1";
 import { createCreatureInstance, updateCreatureAI, damageCreature, canInteract, getToolBonus } from "./CreatureAI.js";
 import { createInspirationSystem } from "./InspirationSystem.js";
 import { createDiscoveryJournal } from "./DiscoveryJournal.js";

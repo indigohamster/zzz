@@ -1,5 +1,6 @@
 import { H, TILE, W } from "../core/config.js?v=27";
-import { drawInkCompanionAt, drawPixelPersonAt } from "../characters/protagonist/ProtagonistSprite.js?v=26";
+import { drawModelSprite } from "../core/SpriteAssets.js?v=2";
+import { drawInkCompanionAt, drawPixelPersonAt } from "../characters/protagonist/ProtagonistSprite.js?v=28";
 
 const TALK_RANGE = 54;
 
@@ -198,7 +199,7 @@ export function createStoryNpcManager({ player, tileMap, run, gameState }) {
     for (const npc of npcs) {
       const x = Math.floor(npc.x - cameraX);
       const y = Math.floor(npc.y - cameraY);
-      drawNpc(ctx, npc, x, y);
+      drawNpc(ctx, npc, x, y, promptPulse);
       if (nearestNpc === npc && !activeNpc) drawTalkPrompt(ctx, npc, x, y, promptPulse);
     }
   }
@@ -293,36 +294,59 @@ function resolveDialogue(npc) {
   return npc.lineSets.first;
 }
 
-function drawNpc(ctx, npc, x, y) {
+function drawNpc(ctx, npc, x, y, frame = 0) {
   ctx.save();
   if (npc.role === "companion") {
     drawInkCompanionAt(ctx, {
       x,
       footY: y + npc.h / 2 + 7,
       facing: npc.facing,
-      frame: promptPulse,
+      frame,
       bodyColor: npc.color,
       accentColor: npc.accent,
     });
   } else {
-    drawPixelPersonAt(ctx, {
-      x,
-      footY: y + npc.h / 2 + 8,
+    const footY = y + npc.h / 2 + 8;
+    const spriteId = storyNpcSpriteId(npc);
+    const rendered = drawModelSprite(ctx, spriteId, x, footY, {
+      height: storyNpcSpriteHeight(npc),
       facing: npc.facing,
-      frame: promptPulse,
-      walkSpeed: 0.08,
-      bodyColor: npc.color,
-      accentColor: npc.accent,
-      hairColor: npc.role === "pressure" ? "#2b1018" : "#11131a",
-      apron: npc.role === "shop",
-      apronColor: npc.role === "shop" ? "#d8cfb8" : undefined,
-      badge: npc.role === "shop" || npc.role === "pressure",
     });
+    if (!rendered) {
+      drawPixelPersonAt(ctx, {
+        x,
+        footY,
+        facing: npc.facing,
+        frame,
+        walkSpeed: 0.08,
+        bodyColor: npc.color,
+        accentColor: npc.accent,
+        hairColor: npc.role === "pressure" ? "#2b1018" : "#11131a",
+        apron: npc.role === "shop",
+        apronColor: npc.role === "shop" ? "#d8cfb8" : undefined,
+        badge: npc.role === "shop" || npc.role === "pressure",
+      });
+    }
   }
 
   ctx.fillStyle = npc.accent;
   ctx.fillRect(x - 8, y - npc.h / 2 - 6, 16, 2);
   ctx.restore();
+}
+
+function storyNpcSpriteId(npc) {
+  if (npc.id === "supply_keeper") return "supply_keeper";
+  if (npc.id === "forgotten_draft") return "forgotten_draft";
+  if (npc.id === "deleted_character") return "deleted_character";
+  if (npc.id === "zhou_redline") return "zhou_redline_shadow";
+  return "forgotten_draft";
+}
+
+function storyNpcSpriteHeight(npc) {
+  if (npc.id === "supply_keeper") return 46;
+  if (npc.id === "deleted_character") return 54;
+  if (npc.id === "zhou_redline") return 66;
+  return 46;
 }
 
 function drawTalkPrompt(ctx, npc, x, y, promptPulse = 0) {

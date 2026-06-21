@@ -1,7 +1,7 @@
 ﻿// demo_main.js — 墨境生态 Demo 主逻辑
 // 独立可玩原型：6 种生物 + 灵感系统 + 图鉴
 
-import { CREATURE_CATALOG, getAllCreatureIds } from "./CreatureCatalog.js";
+import { CREATURE_CATALOG, getAllCreatureIds } from "./CreatureCatalog.js?v=1";
 import { createCreatureInstance, updateCreatureAI, damageCreature, canInteract, getToolBonus } from "./CreatureAI.js";
 import { createInspirationSystem } from "./InspirationSystem.js";
 import { createDiscoveryJournal } from "./DiscoveryJournal.js";

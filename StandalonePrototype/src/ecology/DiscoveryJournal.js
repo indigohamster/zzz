@@ -1,7 +1,7 @@
 ﻿// DiscoveryJournal.js — 图鉴记录系统
 // 追踪玩家见过/记录过/捕获过的生物
 
-import { getAllCreatureIds, getCreature, CREATURE_CATALOG } from "./CreatureCatalog.js";
+import { getAllCreatureIds, getCreature, CREATURE_CATALOG } from "./CreatureCatalog.js?v=1";
 import { CREATURE_CLASS } from "./CreatureTypes.js";
 
 export function createDiscoveryJournal() {
