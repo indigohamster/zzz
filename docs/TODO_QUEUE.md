@@ -12,6 +12,21 @@
 
 ## 已完成
 
+### 像素角色模型包与类型目录
+状态：✅ 第一版完成 (2026-06-22)。
+
+详情：
+- 角色模型资产按类型分文件夹：主角、伙伴、墨境 NPC、办公室 NPC、普通怪物、Boss
+- 新增模型包索引和生产说明，后续替换模型时优先维护 `model_pack_index.json` 和每个模型自己的 `config.json`
+- 主角已有 rig-baked jump、turnaround、分帧、strip 和锚点预览
+- 18 个非主角模型已有第一版 `idle/walk/talk/hurt` 动作包和 `motion_profile.json`
+- 办公室 NPC 激活态接入 `talk_strip.png`，不再只回退 idle
+- 验证通过：80 个 JS 语法检查、19 个模型资源检查、83 个 HTTP 模块递归加载、浏览器 Runtime 检查
+
+后续建议：
+- 优先把办公室四人组、Supply Keeper、Inkdot、常见怪物各挑一个升级为主角同级的 rig-baked 动作
+- 给每个重要 NPC 补专属工作/对话/受压动作，而不是只用通用 whole-sprite transform
+
 ### 探索欲第一版：未知地图与可发现物
 状态：✅ 第一版完成 (2026-06-20)。
 

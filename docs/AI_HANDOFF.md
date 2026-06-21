@@ -4,6 +4,24 @@
 
 ## 最近一次修改
 
+### 2026-06-22 像素角色模型包与类型目录
+用户强调“每个类型的角色要单独建文件夹”，并要求继续让其他角色也对应开始动起来。产品判断：这不是单纯整理文件，而是要建立可持续的角色资产生产管线，方便后续按主角、伙伴、办公室 NPC、墨境 NPC、怪物、Boss 分别扩展动作、替换模型和检查资源。
+
+修改：
+- `StandalonePrototype/assets/sprites/models/` 顶层改为类型目录：`player/`、`companions/`、`story_npcs/`、`office_npcs/`、`monsters/`、`bosses/`
+- 主角迁入 `player/protagonist/`，保留完整 rig-baked jump、turnaround、动作 strip、分帧和锚点预览
+- 18 个非主角模型生成第一版 typed motion pack：`idle/walk/talk/hurt`、分帧目录、`frame_data.json`、`motion_profile.json`、`anchor_preview.png`
+- `src/core/SpriteAssets.js` 接入新类型路径和 `talk` 动画，办公室 NPC 激活时会读取对应 `talk_strip.png`
+- 新增/更新资源说明：`assets/sprites/models/MODEL_PACKS.md`、`assets/sprites/models/model_pack_index.json`、`docs/ModelAssetPipeline.md`
+- 新增 `.gitignore` 忽略本地 `.codex/` 工具配置
+
+验证：
+- ✅ 80 个 JS 文件 `node --check` 通过
+- ✅ 19 个模型定义、19 个索引模型资源检查通过，无缺失动画文件
+- ✅ HTTP import walk：扫描 83 个模块、185 条 import，无 404/加载失败
+- ✅ 浏览器刷新：`bootstrap.js?v=55`，无 Runtime error，控制台无新增 error
+- ✅ 已推送到 GitHub：`master -> origin/main`
+
 ### 2026-06-20 探索欲第一版
 用户强调“探索是重点之一”。判断当前问题是地图/房间虽然存在，但未知感和发现记录不足，玩家缺少“我找到了东西”的即时与长期反馈。
 

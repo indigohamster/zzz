@@ -1,13 +1,40 @@
 ﻿# Project State — Inkwell Deep (墨境)
 
 ## Current Phase
-Canvas Rift (画稿裂口) Integration
+Live Pixel Character Pipeline + Canvas Rift Integration
 
 ## Core Loop Status
 ```
 chapter0 → opening → studio → (T) InkwellExperiment → feedback → work → studio
                                                          └→ studio (experiment onFinish)
 ```
+
+## Recently Implemented: Pixel Model Asset Pipeline (2026-06-22)
+
+The character asset pipeline now uses typed model folders instead of one flat sprite directory:
+
+```text
+StandalonePrototype/assets/sprites/models/
+├── player/
+├── companions/
+├── story_npcs/
+├── office_npcs/
+├── monsters/
+└── bosses/
+```
+
+Key points:
+- `src/core/SpriteAssets.js` maps model IDs to typed folders and supports `talk` animation.
+- `assets/sprites/models/model_pack_index.json` is the model registry.
+- `assets/sprites/models/MODEL_PACKS.md` and `docs/ModelAssetPipeline.md` document the model-pack contract.
+- The protagonist has a rig-baked jump prototype under `player/protagonist/rig/`.
+- 18 non-player models have first-pass `idle/walk/talk/hurt` strips, separated frames, frame data, motion profiles, and anchor previews.
+
+Verification on 2026-06-22:
+- 80 JS files passed `node --check`.
+- 19 model definitions and 19 index entries passed resource validation.
+- HTTP import walk scanned 83 modules and 185 imports with no failures.
+- Browser reload loaded `bootstrap.js?v=55` with no Runtime error or console error.
 
 ## Recently Implemented: Canvas Rift System (v3)
 

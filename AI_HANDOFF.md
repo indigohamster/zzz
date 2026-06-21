@@ -2,9 +2,13 @@
 
 ## 当前版本
 
-Commit: `9e51247`
-分支: `main` → 远程 `origin/main`
+更新时间：2026-06-22
+分支：本地 `master` → 远程 `origin/main`
 仓库: `https://github.com/indigohamster/zzz`
+
+最近已推送提交：
+- `3baa388` Ignore local Codex config
+- `0ef36c4` Organize pixel model packs by character type
 
 ## 当前状态
 
@@ -23,6 +27,15 @@ Commit: `9e51247`
 - Git 仓库 + GitHub 远程
 
 #### 新增系统（最新）
+
+- **像素角色模型包与类型目录** ⭐ 新增
+  - 角色资源不再平铺在 `assets/sprites/models/` 根目录，已按类型拆成 `player/`、`companions/`、`story_npcs/`、`office_npcs/`、`monsters/`、`bosses/`
+  - 新增 `model_pack_index.json` 和 `MODEL_PACKS.md`，记录模型包索引、必备文件和生产规范
+  - 主角迁入 `player/protagonist/`，包含 `rig/rig.json`、拆分部件、turnaround、idle/walk/run/draw/jump/hurt 分帧与 strip
+  - 18 个非主角模型已生成第一版 typed motion pack：`idle/walk/talk/hurt` strip、`animations/<action>/frame_XX.png`、`frame_data.json`、`motion_profile.json`、`anchor_preview.png`
+  - `SpriteAssets.js` 已接入类型目录和 `talk` 动画，办公室 NPC 激活时会读取 `talk_strip.png`
+  - 缓存版本已推进到 `bootstrap.js?v=55`、`main.js?v=79`、`SpriteAssets.js?v=21`
+  - 验证：80 个 JS `node --check` 通过，19 个模型定义资源无缺失，HTTP import walk 扫描 83 个模块/185 条 import 无失败，浏览器刷新无 Runtime error
 
 - **集中调参表** ⭐ 新增
   - 新增 `StandalonePrototype/src/core/TuningConfig.js`，集中管理世界尺寸、夜晚时长、地图层区间、房间数量、地图规则权重和画布门返回传送概率
