@@ -1,4 +1,4 @@
-import { H, W } from "../../core/config.js";
+﻿import { H, W } from "../../core/config.js?v=27";
 import { label } from "../../core/render.js";
 
 const PANEL_W = 720;

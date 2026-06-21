@@ -34,6 +34,16 @@ export const GATE_TYPES = {
   },
 };
 
+const GATE_ROOM_TYPES = new Set(["explore", "resource", "treasure", "event", "shop", "combat"]);
+const ROOM_GATE_SCORE = {
+  explore: 6,
+  resource: 5,
+  treasure: 5,
+  event: 4,
+  shop: 4,
+  combat: 2,
+};
+
 // 生成画稿入口实例
 export function createCanvasGate(type, worldX, worldY) {
   const config = GATE_TYPES[type];
@@ -57,28 +67,47 @@ export function createCanvasGate(type, worldX, worldY) {
 export function placeGatesOnMap(tileMap, unlockedTypes, count = 3) {
   const rooms = tileMap.getRooms();
   const gates = [];
-  const availableTypes = unlockedTypes || ["warm_doodle"];
+  const availableTypes = (unlockedTypes || ["warm_doodle"]).filter((type) => GATE_TYPES[type]);
 
-  // 排除入口房间和 Boss 房间
-  const validRooms = rooms.filter(r =>
-    r.type !== "draft_gate" && r.type !== "boss" && r.type !== "torn"
-  );
+  const validRooms = rooms
+    .filter(isValidGateRoom)
+    .map((room) => ({ room, score: weightedRoomScore(room) }))
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.room);
 
-  if (validRooms.length === 0) return gates;
+  if (validRooms.length === 0 || availableTypes.length === 0) return gates;
 
-  const shuffled = [...validRooms].sort(() => Math.random() - 0.5);
-  const placed = Math.min(count, shuffled.length, availableTypes.length);
+  const placed = Math.min(count, validRooms.length, availableTypes.length);
 
   for (let i = 0; i < placed; i++) {
-    const room = shuffled[i];
+    const room = validRooms[i];
     const gateType = availableTypes[i % availableTypes.length];
     const gx = (room.x + room.w / 2) * 8;
     const gy = (room.y + room.h / 2) * 8;
     const gate = createCanvasGate(gateType, gx, gy);
-    if (gate) gates.push(gate);
+    if (gate) {
+      gate.roomId = room.id;
+      gate.roomType = room.type;
+      gate.layerId = room.layerId ?? null;
+      gate.layerName = room.layerName ?? "";
+      gate.riskTier = room.riskTier ?? gate.config.dangerLevel;
+      gates.push(gate);
+    }
   }
 
   return gates;
+}
+
+function isValidGateRoom(room) {
+  if (!room || room.rewardClaimed || room.completed) return false;
+  return GATE_ROOM_TYPES.has(room.type);
+}
+
+function weightedRoomScore(room) {
+  const base = ROOM_GATE_SCORE[room.type] ?? 1;
+  const branchBonus = room.routeHint === "branch" ? 1.5 : 0;
+  const depthBonus = Math.min(1.5, (room.depthRank ?? 0) * 0.6);
+  return base + branchBonus + depthBonus + Math.random();
 }
 
 // 检测玩家是否靠近入口
@@ -116,42 +145,82 @@ export function drawGates(ctx, gates, cameraX, cameraY) {
 
     const glow = gate.animFrame;
     const config = gate.config;
+    const x = Math.floor(sx - gate.w / 2);
+    const y = Math.floor(sy - gate.h / 2);
 
-    // 光晕
-    const gradient = ctx.createRadialGradient(sx, sy, 10, sx, sy, 60);
-    gradient.addColorStop(0, config.glowColor + (0.4 + glow * 0.2) + ")");
-    gradient.addColorStop(1, config.glowColor + "0)");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(sx - 60, sy - 60, 120, 120);
+    // Pixel bloom
+    ctx.fillStyle = config.glowColor + (0.12 + glow * 0.08) + ")";
+    ctx.fillRect(x - 10, y - 10, gate.w + 20, gate.h + 20);
+    ctx.fillStyle = config.glowColor + (0.18 + glow * 0.12) + ")";
+    ctx.fillRect(x - 4, y - 4, gate.w + 8, gate.h + 8);
+    for (let i = 0; i < 8; i++) {
+      const px = Math.floor(sx + Math.sin(gate.animTimer * 0.05 + i) * (30 + i * 2));
+      const py = Math.floor(sy + Math.cos(gate.animTimer * 0.04 + i * 1.7) * (36 + (i % 3) * 4));
+      ctx.fillStyle = i % 2 === 0 ? config.color : "#f5efe0";
+      ctx.fillRect(px, py, 2, 2);
+    }
 
-    // 画框
-    ctx.fillStyle = config.color;
-    ctx.globalAlpha = 0.85;
-    ctx.fillRect(sx - gate.w / 2, sy - gate.h / 2, gate.w, gate.h);
-
-    // 内部闪烁
-    ctx.fillStyle = "#f5efe0";
-    ctx.globalAlpha = 0.3 + glow * 0.3;
-    ctx.fillRect(sx - gate.w / 2 + 4, sy - gate.h / 2 + 4, gate.w - 8, gate.h - 8);
-
-    // 边框
+    // Chunky frame
     ctx.globalAlpha = 1;
-    ctx.strokeStyle = config.color;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(sx - gate.w / 2, sy - gate.h / 2, gate.w, gate.h);
+    ctx.fillStyle = "#05070b";
+    ctx.fillRect(x - 4, y - 4, gate.w + 8, gate.h + 8);
+    ctx.fillStyle = config.color;
+    ctx.fillRect(x, y, gate.w, gate.h);
+    ctx.fillStyle = "#f5efe0";
+    ctx.fillRect(x + 4, y + 4, gate.w - 8, gate.h - 8);
+    ctx.fillStyle = "#05070b";
+    ctx.fillRect(x + 8, y + 8, gate.w - 16, gate.h - 16);
 
-    // 图标
-    ctx.fillStyle = "#fff";
-    ctx.font = "16px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(config.icon, sx, sy + 2);
+    // Inner animated picture
+    const inner = config.tileColor;
+    ctx.fillStyle = inner;
+    ctx.globalAlpha = 0.72 + glow * 0.2;
+    ctx.fillRect(x + 11, y + 11, gate.w - 22, gate.h - 22);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = config.color;
+    for (let yy = y + 14; yy < y + gate.h - 12; yy += 8) {
+      const lineW = gate.w - 28 - ((yy + gate.animTimer) % 3) * 3;
+      ctx.fillRect(x + 14, yy, lineW, 2);
+    }
 
-    // 标签
+    drawGateGlyph(ctx, gate.type, sx, sy, config.color);
+
+    // Label
+    ctx.fillStyle = "rgba(5,7,11,0.78)";
+    const labelW = Math.max(56, ctx.measureText(config.name).width + 10);
+    ctx.fillRect(Math.floor(sx - labelW / 2), Math.floor(sy + gate.h / 2 + 6), labelW, 14);
     ctx.fillStyle = config.color;
     ctx.font = "10px Segoe UI, Microsoft YaHei, sans-serif";
+    ctx.textAlign = "center";
     ctx.fillText(config.name, sx, sy + gate.h / 2 + 14);
     ctx.textAlign = "start";
 
     ctx.globalAlpha = 1;
   }
+}
+
+function drawGateGlyph(ctx, type, sx, sy, color) {
+  const x = Math.floor(sx);
+  const y = Math.floor(sy);
+  ctx.fillStyle = "#05070b";
+  ctx.fillRect(x - 7, y - 7, 14, 14);
+  ctx.fillStyle = color;
+  if (type === "warm_doodle") {
+    ctx.fillRect(x - 5, y - 3, 10, 6);
+    ctx.fillRect(x - 2, y - 6, 4, 12);
+    ctx.fillStyle = "#f5efe0";
+    ctx.fillRect(x - 1, y - 1, 2, 2);
+    return;
+  }
+  if (type === "horror_sketch") {
+    ctx.fillRect(x - 6, y - 2, 12, 4);
+    ctx.fillRect(x - 3, y - 5, 6, 10);
+    ctx.fillStyle = "#05070b";
+    ctx.fillRect(x - 1, y - 1, 2, 2);
+    return;
+  }
+  ctx.fillRect(x - 5, y - 5, 4, 4);
+  ctx.fillRect(x + 1, y - 5, 4, 4);
+  ctx.fillRect(x - 5, y + 1, 4, 4);
+  ctx.fillRect(x + 1, y + 1, 4, 4);
 }

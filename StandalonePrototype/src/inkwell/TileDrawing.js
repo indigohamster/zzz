@@ -1,4 +1,4 @@
-import { TILE, Tile, tileColors, WORLD_H, WORLD_W } from "../core/config.js";
+import { TILE, Tile, tileColors, WORLD_H, WORLD_W } from "../core/config.js?v=27";
 import { hash01 } from "./Noise.js";
 
 export function drawTile(ctx, tileMap, x, y, sx, sy) {

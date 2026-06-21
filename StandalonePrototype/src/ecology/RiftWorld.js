@@ -6,6 +6,7 @@ import { createCreatureInstance, updateCreatureAI, damageCreature } from "./Crea
 import { CREATURE_CATALOG } from "./CreatureCatalog.js";
 import { tryJackpot } from "./DiscoveryItems.js";
 import { RIFT_TYPES } from "./CanvasRift.js";
+import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=26";
 
 const SW = 640, SH = 360;
 
@@ -14,7 +15,7 @@ export function createRiftWorld(typeId, onComplete, nestDepth = 0) {
   let creatures = [];
   let items = [];
   let collected = [];
-  let player = { x: 60, y: 200, w: 14, h: 22, speed: 3 };
+  let player = { x: 60, y: 200, w: 14, h: 22, speed: 3, facing: 1, walkFrame: 0, vx: 0, vy: 0 };
   let exitPortal = null;
   let exitActive = false;
   let finished = false;
@@ -23,15 +24,16 @@ export function createRiftWorld(typeId, onComplete, nestDepth = 0) {
   let particles = [];
   let subRift = null;
   let timeLeft = 3600;
-  let worldState = {};
+  const worldState = {};
 
   function start() {
     finished = false;
     creatures = []; items = []; collected = [];
-    player.x = 60; player.y = 200;
+    player.x = 60; player.y = 200; player.facing = 1; player.walkFrame = 0; player.vx = 0; player.vy = 0;
     messageText = ""; messageTimer = 0;
     particles = []; subRift = null;
-    exitActive = false; worldState = { finished: false };
+    exitActive = false; resetWorldState();
+    worldState.finished = false;
     timeLeft = 3600;
 
     switch (typeId) {
@@ -51,6 +53,10 @@ export function createRiftWorld(typeId, onComplete, nestDepth = 0) {
     }
     exitPortal = { x: 580, y: 180, active: false };
     worldState.atmosphere = "温暖的光从画纸纤维里透出来。";
+  }
+
+  function resetWorldState() {
+    for (const key of Object.keys(worldState)) delete worldState[key];
   }
 
   function buildWasteWorld() {
@@ -127,9 +133,14 @@ export function createRiftWorld(typeId, onComplete, nestDepth = 0) {
 
     if (worldState.rule?.gravity === -1) my = -my;
 
+    const moving = mx !== 0 || my !== 0;
     const len = Math.sqrt(mx * mx + my * my) || 1;
-    player.x = Math.max(10, Math.min(630, player.x + (mx / len) * player.speed));
-    player.y = Math.max(10, Math.min(350, player.y + (my / len) * player.speed));
+    player.vx = (mx / len) * player.speed;
+    player.vy = (my / len) * player.speed;
+    if (Math.abs(player.vx) > 0.05) player.facing = player.vx < 0 ? -1 : 1;
+    player.walkFrame += moving ? Math.hypot(player.vx, player.vy) + 0.5 : 0.08;
+    player.x = Math.max(10, Math.min(630, player.x + player.vx));
+    player.y = Math.max(10, Math.min(350, player.y + player.vy));
 
     // 收集物品
     for (const item of items) {
@@ -248,27 +259,18 @@ export function createRiftWorld(typeId, onComplete, nestDepth = 0) {
     for (const item of items) {
       if (item.collected) continue;
       const p = Math.sin(Date.now() / 500 + item.x * 0.1) * 0.3 + 0.7;
-      ctx.fillStyle = `rgba(${hexToRgb(item.color)},${p})`;
-      ctx.beginPath(); ctx.arc(item.x, item.y, 6, 0, Math.PI * 2); ctx.fill();
+      drawRiftCollectible(ctx, item.x, item.y, item.color, p);
     }
 
     for (const c of creatures) {
       if (!c.alive) continue;
       const cat = c.catalog;
-      ctx.fillStyle = cat.color;
-      if (typeId === "ai_tainted" && cat.class === "template") {
-        ctx.fillRect(c.x - cat.size.w / 2, c.y - cat.size.h / 2, cat.size.w, cat.size.h);
-      } else {
-        ctx.fillRect(c.x - cat.size.w / 2, c.y - cat.size.h / 2, cat.size.w, cat.size.h);
-        ctx.fillStyle = "#f5efe0";
-        ctx.fillRect(c.x + 2, c.y - 2, 2, 2);
-      }
+      drawRiftCreature(ctx, c.x, c.y, cat, typeId === "ai_tainted" && cat.class === "template");
     }
 
     if (exitActive && exitPortal) {
       const p2 = Math.sin(Date.now() / 400) * 0.3 + 0.7;
-      ctx.fillStyle = `rgba(100,200,100,${p2})`;
-      ctx.beginPath(); ctx.arc(exitPortal.x, exitPortal.y, 16, 0, Math.PI * 2); ctx.fill();
+      drawRiftExit(ctx, exitPortal.x, exitPortal.y, p2);
       ctx.fillStyle = "#fff";
       ctx.font = "9px sans-serif";
       ctx.textAlign = "center";
@@ -278,20 +280,13 @@ export function createRiftWorld(typeId, onComplete, nestDepth = 0) {
 
     if (subRift?.active) {
       const p3 = Math.sin(Date.now() / 500) * 0.3 + 0.7;
-      ctx.fillStyle = `rgba(192,132,252,${p3})`;
-      ctx.fillRect(subRift.x - 16, subRift.y - 20, 32, 40);
-      ctx.fillStyle = "rgba(255,255,255,0.5)";
-      ctx.font = "14px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("?", subRift.x, subRift.y + 5);
-      ctx.textAlign = "start";
+      drawNestedRift(ctx, subRift.x, subRift.y, p3);
       ctx.fillStyle = "#c084fc";
       ctx.font = "9px sans-serif";
       ctx.fillText("E 深入", subRift.x - 12, subRift.y - 26);
     }
 
-    ctx.fillStyle = "#2d2d2d";
-    ctx.fillRect(player.x - 7, player.y - 11, 14, 22);
+    drawRiftPlayer(ctx, player.x, player.y);
 
     for (const p of particles) {
       ctx.globalAlpha = Math.min(1, p.life / 30);
@@ -333,11 +328,69 @@ export function createRiftWorld(typeId, onComplete, nestDepth = 0) {
     }
   }
 
-  function hexToRgb(hex) {
-    const r = parseInt(hex.slice(1,3), 16);
-    const g = parseInt(hex.slice(3,5), 16);
-    const b = parseInt(hex.slice(5,7), 16);
-    return `${r},${g},${b}`;
+  function drawRiftCollectible(ctx, x, y, color, alpha) {
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = "#05070b";
+    ctx.fillRect(x - 5, y - 5, 10, 10);
+    ctx.fillStyle = color;
+    ctx.fillRect(x - 4, y - 6, 8, 8);
+    ctx.fillStyle = "#f5efe0";
+    ctx.fillRect(x - 2, y - 4, 3, 2);
+    ctx.globalAlpha = 1;
+  }
+
+  function drawRiftCreature(ctx, x, y, cat, template) {
+    const w = Math.floor(cat.size.w);
+    const h = Math.floor(cat.size.h);
+    const sx = Math.floor(x - w / 2);
+    const sy = Math.floor(y - h / 2);
+    ctx.fillStyle = "#05070b";
+    ctx.fillRect(sx - 1, sy - 1, w + 2, h + 2);
+    ctx.fillStyle = cat.color;
+    ctx.fillRect(sx, sy, w, h);
+    ctx.fillStyle = template ? "#d0d8e0" : "#f5efe0";
+    ctx.fillRect(sx + w - 7, sy + 4, 3, 3);
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(sx + 2, sy + h - 3, w - 4, 2);
+    if (template) {
+      ctx.fillStyle = "#05070b";
+      for (let yy = sy + 3; yy < sy + h - 2; yy += 6) ctx.fillRect(sx + 2, yy, w - 4, 1);
+    }
+  }
+
+  function drawRiftExit(ctx, x, y, pulse) {
+    ctx.fillStyle = `rgba(100,200,100,${Math.max(0.18, pulse * 0.22)})`;
+    ctx.fillRect(x - 21, y - 25, 42, 50);
+    ctx.fillStyle = "#05070b";
+    ctx.fillRect(x - 11, y - 17, 22, 34);
+    ctx.fillStyle = "#64c864";
+    ctx.fillRect(x - 8, y - 14, 16, 28);
+    ctx.fillStyle = "#e8ffd8";
+    ctx.fillRect(x - 4, y - 8, 8, 2);
+    ctx.fillRect(x - 4, y, 8, 2);
+  }
+
+  function drawNestedRift(ctx, x, y, pulse) {
+    ctx.fillStyle = `rgba(192,132,252,${Math.max(0.18, pulse * 0.24)})`;
+    ctx.fillRect(x - 24, y - 30, 48, 60);
+    ctx.fillStyle = "#05070b";
+    ctx.fillRect(x - 16, y - 22, 32, 44);
+    ctx.fillStyle = "#c084fc";
+    ctx.fillRect(x - 13, y - 19, 26, 38);
+    ctx.fillStyle = "#f5efe0";
+    ctx.fillRect(x - 2, y - 8, 4, 14);
+    ctx.fillRect(x - 5, y + 9, 10, 3);
+  }
+
+  function drawRiftPlayer(ctx, x, y) {
+    drawProtagonistAt(ctx, {
+      x,
+      footY: y + player.h / 2 + 8,
+      facing: player.facing,
+      frame: player.walkFrame,
+      walkSpeed: Math.hypot(player.vx, player.vy),
+      showTank: false,
+    });
   }
 
   return { start, update, handleKey, draw, worldState };

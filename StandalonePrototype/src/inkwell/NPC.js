@@ -1,5 +1,5 @@
-import { TILE } from "../core/config.js";
-import { GRAVITY, MAX_FALL } from "./InkwellConfig.js";
+import { TILE } from "../core/config.js?v=27";
+import { GRAVITY, MAX_FALL } from "./InkwellConfig.js?v=2";
 import { pickBossVariant } from "./BossCatalog.js?v=24";
 import { pickMonsterForRoom } from "./MonsterCatalog.js";
 
@@ -82,6 +82,86 @@ export function createNpcManager({ physics, player, run, tileMap, combat, gameSt
 
   function spawnBoss(room) {
     spawnInRoom(room, 1, bossVariant.hp, true);
+  }
+
+  function spawnGateHunters({ sourceX, sourceY, count = 1, hp = 42, roomType = "danger", color = "#b23b48", label = "Canvas Echo" } = {}) {
+    const room = findRoomAtPixel(sourceX, sourceY) ?? pickSpawnRoom(roomType);
+    if (!room) return 0;
+    let spawned = 0;
+    const archetype = {
+      ...pickEnemyArchetype(roomType),
+      color,
+      eye: "#f7f0df",
+      contactDamage: 6,
+      inkDrain: 4,
+      behavior: "leaper",
+      speed: 1.18,
+      jump: -5.2,
+      sightX: 260,
+      sightY: 150,
+    };
+
+    for (let i = 0; i < count; i++) {
+      const x = sourceX ?? (room.x + room.w / 2) * TILE;
+      const y = sourceY ?? (room.y + room.h / 2) * TILE;
+      const jitterX = (i - (count - 1) / 2) * 26 + (Math.random() - 0.5) * 18;
+      const finalHp = Math.max(1, Math.round(hp * getStressMultiplier()));
+      npcs.push({
+        x: x + jitterX,
+        y: y - 12,
+        roomId: room.id,
+        w: 18,
+        h: 20,
+        vx: i % 2 === 0 ? -0.55 : 0.55,
+        vy: -1.2,
+        hp: finalHp,
+        maxHp: finalHp,
+        hurt: 0,
+        flash: 6,
+        boss: false,
+        rewardDropped: false,
+        contactCooldown: 0,
+        aiTimer: Math.floor(Math.random() * 60),
+        attackCooldown: 30,
+        skillWindup: 0,
+        pendingSkill: null,
+        pulseFrame: 16,
+        slamActive: false,
+        stuckFrames: 0,
+        lastX: x + jitterX,
+        facing: i % 2 === 0 ? -1 : 1,
+        patrolDir: i % 2 === 0 ? -1 : 1,
+        state: "gate_hunter",
+        archetype,
+        variant: null,
+        enemyType: "gate_hunter",
+        combatTags: ["canvas", "hunter"],
+        weakness: ["sword", "whip"],
+        resistance: ["dagger"],
+        label,
+      });
+      spawned++;
+    }
+    return spawned;
+  }
+
+  function findRoomAtPixel(px, py) {
+    if (!Number.isFinite(px) || !Number.isFinite(py)) return null;
+    const tx = px / TILE;
+    const ty = py / TILE;
+    return tileMap.getRooms().find((room) => (
+      tx >= room.x &&
+      tx <= room.x + room.w &&
+      ty >= room.y &&
+      ty <= room.y + room.h
+    )) ?? null;
+  }
+
+  function pickSpawnRoom(roomType) {
+    const rooms = tileMap.getRooms().filter((room) => room.type !== "entrance" && room.type !== "exit" && room.type !== "boss");
+    const preferred = rooms.filter((room) => room.type === roomType || room.type === "danger" || room.type === "combat");
+    const pool = preferred.length > 0 ? preferred : rooms;
+    return pool[Math.floor(Math.random() * pool.length)] ?? null;
   }
 
   function damageNpc(npc, baseDamage, direction, weaponTrait = "plain", knockback = 4, knockbackY = -1.35) {
@@ -251,14 +331,9 @@ export function createNpcManager({ physics, player, run, tileMap, combat, gameSt
       if (npc.hp <= 0) continue;
       const x = Math.floor(npc.x - cameraX);
       const y = Math.floor(npc.y - cameraY);
-      ctx.fillStyle = npc.flash > 0 ? "#ffffff" : npc.hurt > 0 ? "#8d1d25" : npc.variant?.color ?? npc.archetype?.color ?? "#202026";
+      drawEnemyAura(ctx, npc, x, y);
       drawNpcBody(ctx, npc, x, y);
-      ctx.fillStyle = npc.variant?.eye ?? npc.archetype?.eye ?? "#f1ead9";
-      ctx.fillRect(x - (npc.boss ? 8 : 4) + npc.facing, y - 4, npc.boss ? 16 : 8, 2);
-      ctx.fillStyle = "#111";
-      ctx.fillRect(x - 14, y + npc.h / 2 + 4, 28, 3);
-      ctx.fillStyle = npc.boss ? "#d8cfb8" : "#b41f32";
-      ctx.fillRect(x - 14, y + npc.h / 2 + 4, 28 * Math.max(0, npc.hp / npc.maxHp), 3);
+      drawNpcHealth(ctx, npc, x, y);
       if (npc.boss) {
         if (npc.skillWindup > 0 || npc.pulseFrame > 0) {
           const radius = npc.pulseFrame > 0 ? 36 + npc.pulseFrame * 5 : 28 - npc.skillWindup * 0.4;
@@ -269,7 +344,7 @@ export function createNpcManager({ physics, player, run, tileMap, combat, gameSt
           ctx.stroke();
         }
         ctx.fillStyle = "rgba(241,234,217,0.85)";
-        ctx.font = "11px Segoe UI, sans-serif";
+        ctx.font = "11px Courier New, monospace";
         ctx.fillText(npc.variant.name, x - 38, y - npc.h / 2 - 8);
         ctx.fillStyle = "rgba(216,207,184,0.72)";
         ctx.fillText(npc.variant.resistanceLabel, x - 38, y - npc.h / 2 + 5);
@@ -284,38 +359,193 @@ export function createNpcManager({ physics, player, run, tileMap, combat, gameSt
   }
 
   function drawNpcBody(ctx, npc, x, y) {
-    const shape = npc.archetype?.shape;
-    if (npc.boss || shape === "box") {
-      ctx.fillRect(x - npc.w / 2, y - npc.h / 2, npc.w, npc.h);
+    if (npc.boss) {
+      drawBossBody(ctx, npc, x, y);
       return;
     }
+    const id = npc.archetype?.id ?? npc.enemyType;
+    if (id === "inkmite") drawInkmite(ctx, npc, x, y);
+    else if (id === "binder") drawBinder(ctx, npc, x, y);
+    else if (id === "margin_eel") drawMarginEel(ctx, npc, x, y);
+    else if (id === "paper_kite") drawPaperKite(ctx, npc, x, y);
+    else if (id === "blot_sentinel") drawBlotSentinel(ctx, npc, x, y);
+    else drawSketchling(ctx, npc, x, y);
+  }
 
-    if (shape === "round") {
+  function drawEnemyAura(ctx, npc, x, y) {
+    const pulse = npc.pulseFrame ?? 0;
+    if (npc.hurt > 0 || npc.flash > 0) {
+      ctx.fillStyle = npc.flash > 0 ? "rgba(255,255,255,0.22)" : "rgba(178,59,72,0.22)";
+      ctx.fillRect(x - npc.w / 2 - 5, y - npc.h / 2 - 5, npc.w + 10, npc.h + 10);
+    }
+    if (pulse > 0) {
+      ctx.strokeStyle = npc.boss ? "rgba(125,211,252,0.50)" : "rgba(178,59,72,0.56)";
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.ellipse(x, y, npc.w / 2, npc.h / 2, 0, 0, Math.PI * 2);
-      ctx.fill();
-      return;
+      ctx.arc(x, y, (npc.boss ? 28 : 16) + pulse * 2, 0, Math.PI * 2);
+      ctx.stroke();
     }
+    ctx.fillStyle = "rgba(0,0,0,0.34)";
+    ctx.fillRect(x - Math.max(10, npc.w / 2), y + npc.h / 2 + 2, Math.max(20, npc.w), 4);
+  }
 
-    if (shape === "kite") {
-      ctx.beginPath();
-      ctx.moveTo(x, y - npc.h / 2);
-      ctx.lineTo(x + npc.w / 2, y);
-      ctx.lineTo(x, y + npc.h / 2);
-      ctx.lineTo(x - npc.w / 2, y);
-      ctx.closePath();
-      ctx.fill();
-      return;
+  function drawNpcHealth(ctx, npc, x, y) {
+    const w = npc.boss ? 44 : 28;
+    const top = y + npc.h / 2 + 8;
+    ctx.fillStyle = "#05070b";
+    ctx.fillRect(x - w / 2, top, w, 4);
+    ctx.fillStyle = npc.boss ? "#d8cfb8" : "#b41f32";
+    ctx.fillRect(x - w / 2 + 1, top + 1, Math.max(0, (w - 2) * Math.max(0, npc.hp / npc.maxHp)), 2);
+  }
+
+  function drawSketchling(ctx, npc, x, y) {
+    const color = enemyColor(npc, "#202026");
+    const eye = npc.archetype?.eye ?? "#f1ead9";
+    const wiggle = Math.round(Math.sin(npc.aiTimer * 0.18) * 1);
+    rect(ctx, x - 11, y - 11 + wiggle, 22, 21, "#05070b");
+    rect(ctx, x - 9, y - 9 + wiggle, 18, 17, color);
+    rect(ctx, x - 12, y + 6, 6, 4, "#05070b");
+    rect(ctx, x + 6, y + 6, 6, 4, "#05070b");
+    rect(ctx, x - 7 + npc.facing, y - 4 + wiggle, 5, 5, eye);
+    rect(ctx, x + 2 + npc.facing, y - 4 + wiggle, 5, 5, eye);
+    rect(ctx, x - 4, y + 9 + wiggle, 3, 5, "#05070b");
+    rect(ctx, x + 3, y + 9 - wiggle, 3, 5, "#05070b");
+  }
+
+  function drawInkmite(ctx, npc, x, y) {
+    const color = enemyColor(npc, "#171921");
+    const leg = Math.round(Math.sin(npc.aiTimer * 0.36) * 2);
+    rect(ctx, x - 9, y - 7, 18, 14, "#05070b");
+    rect(ctx, x - 7, y - 9, 14, 16, color);
+    for (let i = -1; i <= 1; i++) {
+      rect(ctx, x - 12, y + i * 4 + leg, 6, 2, "#05070b");
+      rect(ctx, x + 6, y + i * 4 - leg, 6, 2, "#05070b");
     }
+    rect(ctx, x + npc.facing * 3, y - 3, 4, 4, npc.archetype?.eye ?? "#5f6f96");
+    rect(ctx, x - 2, y + 6, 4, 2, "#0b0f17");
+  }
 
-    if (shape === "long") {
-      ctx.fillRect(x - npc.w / 2, y - npc.h / 2 + 2, npc.w, npc.h - 4);
-      ctx.fillRect(x - npc.w / 2 + 3, y - npc.h / 2, npc.w - 6, 4);
-      return;
+  function drawBinder(ctx, npc, x, y) {
+    const color = enemyColor(npc, "#31272b");
+    rect(ctx, x - 13, y - 16, 26, 30, "#05070b");
+    rect(ctx, x - 10, y - 14, 20, 27, color);
+    rect(ctx, x - 8, y - 12, 16, 4, "#5f432b");
+    rect(ctx, x - 11, y - 2, 22, 3, "#5f432b");
+    rect(ctx, x - 12, y + 7, 24, 4, "#1d1b25");
+    rect(ctx, x + npc.facing * 5 - 3, y - 5, 8, 4, npc.archetype?.eye ?? "#d8cfb8");
+    rect(ctx, x - 15, y + 10, 5, 8, "#05070b");
+    rect(ctx, x + 10, y + 10, 5, 8, "#05070b");
+  }
+
+  function drawMarginEel(ctx, npc, x, y) {
+    const color = enemyColor(npc, "#25212a");
+    const wave = Math.round(Math.sin(npc.aiTimer * 0.13) * 2);
+    rect(ctx, x - 17, y - 6 + wave, 34, 12, "#05070b");
+    rect(ctx, x - 14, y - 4 + wave, 28, 8, color);
+    rect(ctx, x + npc.facing * 12 - 3, y - 7 + wave, 7, 14, "#05070b");
+    rect(ctx, x + npc.facing * 12 - 2, y - 5 + wave, 5, 10, color);
+    rect(ctx, x + npc.facing * 13, y - 2 + wave, 3, 2, npc.archetype?.eye ?? "#d8cfb8");
+    rect(ctx, x - npc.facing * 17, y - 1 + wave, 5, 2, "rgba(125,211,252,0.35)");
+  }
+
+  function drawPaperKite(ctx, npc, x, y) {
+    const color = enemyColor(npc, "#2d3040");
+    const flap = Math.round(Math.sin(npc.aiTimer * 0.2) * 3);
+    ctx.fillStyle = "#05070b";
+    ctx.beginPath();
+    ctx.moveTo(x, y - 15 - flap);
+    ctx.lineTo(x + 14, y);
+    ctx.lineTo(x, y + 15 + flap);
+    ctx.lineTo(x - 14, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x, y - 11 - flap);
+    ctx.lineTo(x + 10, y);
+    ctx.lineTo(x, y + 11 + flap);
+    ctx.lineTo(x - 10, y);
+    ctx.closePath();
+    ctx.fill();
+    rect(ctx, x - 1, y - 10, 2, 21, "#d8cfb8");
+    rect(ctx, x + npc.facing * 4 - 2, y - 2, 4, 3, npc.archetype?.eye ?? "#f0d9a5");
+    rect(ctx, x - npc.facing * 9, y + 13, 4, 3, "#b23b48");
+  }
+
+  function drawBlotSentinel(ctx, npc, x, y) {
+    const color = enemyColor(npc, "#1d1b25");
+    rect(ctx, x - 12, y - 14, 24, 26, "#05070b");
+    rect(ctx, x - 9, y - 12, 18, 22, color);
+    rect(ctx, x - 7, y - 16, 14, 5, "#05070b");
+    rect(ctx, x + npc.facing * 4 - 3, y - 4, 7, 5, npc.archetype?.eye ?? "#b23b48");
+    rect(ctx, x - 13, y + 8, 26, 4, "#05070b");
+    if (npc.attackCooldown < 28 || npc.pulseFrame > 0) {
+      ctx.strokeStyle = "rgba(178,59,72,0.65)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x - 16.5, y - 18.5, 33, 34);
     }
+  }
 
-    ctx.fillRect(x - npc.w / 2, y - npc.h / 2, npc.w, npc.h);
-    ctx.fillRect(x - npc.w / 2 - 2, y + npc.h / 2 - 7, npc.w + 4, 5);
+  function drawBossBody(ctx, npc, x, y) {
+    const id = npc.variant?.id;
+    if (id === "eraser_warden") drawEraserWarden(ctx, npc, x, y);
+    else if (id === "printhead_maw") drawPrintheadMaw(ctx, npc, x, y);
+    else drawTemplateEngine(ctx, npc, x, y);
+  }
+
+  function drawTemplateEngine(ctx, npc, x, y) {
+    const color = enemyColor(npc, "#111016");
+    const spin = Math.floor(npc.aiTimer / 8) % 4;
+    rect(ctx, x - 20, y - 19, 40, 34, "#05070b");
+    rect(ctx, x - 16, y - 16, 32, 29, color);
+    rect(ctx, x - 12, y - 11, 24, 16, "#1b2028");
+    rect(ctx, x - 6, y - 7, 12, 8, npc.variant?.eye ?? "#f1ead9");
+    const marks = [[-24,-23], [20,-20], [-27,12], [23,15]];
+    for (let i = 0; i < marks.length; i++) {
+      const m = marks[(i + spin) % marks.length];
+      rect(ctx, x + m[0], y + m[1], 9, 9, "#05070b");
+      rect(ctx, x + m[0] + 2, y + m[1] + 2, 5, 5, "#7dd3fc");
+    }
+    rect(ctx, x - 18, y + 15, 8, 8, "#05070b");
+    rect(ctx, x + 10, y + 15, 8, 8, "#05070b");
+  }
+
+  function drawEraserWarden(ctx, npc, x, y) {
+    const color = enemyColor(npc, "#e8e4d6");
+    const crouch = npc.slamActive ? 5 : 0;
+    rect(ctx, x - 18, y - 20 + crouch, 36, 37 - crouch, "#05070b");
+    rect(ctx, x - 15, y - 17 + crouch, 30, 32 - crouch, color);
+    rect(ctx, x - 12, y - 14 + crouch, 24, 4, "#b9a98a");
+    rect(ctx, x - 16, y - 2 + crouch, 32, 5, "#b9a98a");
+    rect(ctx, x + npc.facing * 6 - 4, y - 8 + crouch, 8, 5, npc.variant?.eye ?? "#1d1b25");
+    rect(ctx, x - 23, y + 5 + crouch, 9, 18, "#05070b");
+    rect(ctx, x + 14, y + 5 + crouch, 9, 18, "#05070b");
+    rect(ctx, x + npc.facing * 20, y + 15 + crouch, 14, 8, "#d8cfb8");
+  }
+
+  function drawPrintheadMaw(ctx, npc, x, y) {
+    const color = enemyColor(npc, "#292632");
+    const open = npc.pendingSkill === "dash" || Math.abs(npc.vx) > 2.8;
+    rect(ctx, x - 26, y - 13, 52, 25, "#05070b");
+    rect(ctx, x - 22, y - 10, 44, 18, color);
+    rect(ctx, x + npc.facing * 17 - 7, y - 5, 14, 7, npc.variant?.eye ?? "#b23b48");
+    const mouthX = x + npc.facing * 25;
+    rect(ctx, mouthX - 6, y + (open ? 4 : 7), 12, open ? 15 : 7, "#05070b");
+    rect(ctx, mouthX - 5, y + (open ? 6 : 8), 10, open ? 11 : 4, "#b23b48");
+    for (let i = 0; i < 4; i++) rect(ctx, mouthX - 5 + i * 3, y + (open ? 4 : 7), 2, 5, "#f1ead9");
+    rect(ctx, x - npc.facing * 28, y - 8, 8, 20, "#05070b");
+    rect(ctx, x - npc.facing * 34, y - 2, 7, 14, "#05070b");
+  }
+
+  function enemyColor(npc, fallback) {
+    if (npc.flash > 0) return "#ffffff";
+    if (npc.hurt > 0) return "#8d1d25";
+    return npc.variant?.color ?? npc.archetype?.color ?? fallback;
+  }
+
+  function rect(ctx, x, y, w, h, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(Math.floor(x), Math.floor(y), w, h);
   }
 
   function allDead() {
@@ -348,7 +578,7 @@ export function createNpcManager({ physics, player, run, tileMap, combat, gameSt
     return [...byType.values()];
   }
 
-  return { npcs, reset, update, draw, allDead, roomHasEnemies, roomEnemiesCleared, logWeaknessTable, damageNpc, getBossVariant: () => bossVariant };
+  return { npcs, reset, update, draw, allDead, roomHasEnemies, roomEnemiesCleared, logWeaknessTable, damageNpc, spawnGateHunters, getBossVariant: () => bossVariant };
 }
 
 function normalizeArray(value, fallback = []) {

@@ -1,11 +1,12 @@
-﻿import { TILE, W, H, WORLD_W, WORLD_H, Tile } from "../core/config.js";
+﻿import { TILE, W, H, WORLD_W, WORLD_H, Tile } from "../core/config.js?v=27";
 import { label } from "../core/render.js";
+import { MAP_LAYERS, ROOM_TYPES } from "./MapLayers.js?v=4";
 
 const EXPLORE_RADIUS = 24;
-const MINIMAP_W = 192;
-const MINIMAP_H = 40;
-const MINIMAP_X = W - MINIMAP_W - 16;
-const MINIMAP_Y = 16;
+const MINIMAP_W = 92;
+const MINIMAP_H = 152;
+const MINIMAP_X = W - MINIMAP_W - 18;
+const MINIMAP_Y = H - MINIMAP_H - 24;
 const FULL_MAP_MARGIN = 48;
 const FULL_MAP_STEP = 3;
 
@@ -15,6 +16,11 @@ const ROOM_COLORS = {
   treasure: "#f4d35e",
   resource: "#35d07f",
   rift: "#c084fc",
+  event: "#7dd3fc",
+  shop: "#f2b84b",
+  danger: "#ff5d6c",
+  explore: "#9fb0b8",
+  exit: "#f7f0df",
   boss: "#e23b3b",
 };
 
@@ -75,6 +81,7 @@ export function createMapSystem(tileMap, getPlayer) {
     minimapCtx.clearRect(0, 0, MINIMAP_W, MINIMAP_H);
     minimapCtx.fillStyle = "rgba(12, 10, 14, 0.92)";
     minimapCtx.fillRect(0, 0, MINIMAP_W, MINIMAP_H);
+    drawLayerBands(minimapCtx, 0, 0, MINIMAP_W, MINIMAP_H, scaleY, 0.22);
 
     for (let sy = 0; sy < MINIMAP_H; sy++) {
       const ty = Math.floor(sy / scaleY);
@@ -94,9 +101,11 @@ export function createMapSystem(tileMap, getPlayer) {
     rebuildMinimap();
 
     ctx.fillStyle = "rgba(8, 7, 10, 0.78)";
-    ctx.fillRect(MINIMAP_X - 2, MINIMAP_Y - 2, MINIMAP_W + 4, MINIMAP_H + 4);
+    ctx.fillRect(MINIMAP_X - 8, MINIMAP_Y - 24, MINIMAP_W + 16, MINIMAP_H + 32);
+    label(ctx, "DEPTH", MINIMAP_X, MINIMAP_Y - 9, 11, "#7dd3fc");
 
     ctx.drawImage(minimapCanvas, MINIMAP_X, MINIMAP_Y);
+    drawMinimapDepthTicks(ctx);
 
     const player = getPlayer();
     if (player) {
@@ -106,11 +115,25 @@ export function createMapSystem(tileMap, getPlayer) {
       ctx.beginPath();
       ctx.arc(px, py, 2, 0, Math.PI * 2);
       ctx.fill();
+      const meters = Math.max(0, Math.floor((player.y / TILE) * 0.7));
+      label(ctx, meters + "m", MINIMAP_X + 36, Math.max(MINIMAP_Y + 12, Math.min(MINIMAP_Y + MINIMAP_H - 6, py + 4)), 9, "#f7f0df");
     }
 
     ctx.strokeStyle = "#5c554c";
     ctx.lineWidth = 1;
     ctx.strokeRect(MINIMAP_X - 1, MINIMAP_Y - 1, MINIMAP_W + 2, MINIMAP_H + 2);
+  }
+
+  function drawMinimapDepthTicks(ctx) {
+    for (const layer of MAP_LAYERS) {
+      const y = MINIMAP_Y + layer.yRange[0] * scaleY;
+      ctx.strokeStyle = "rgba(247,240,223,0.22)";
+      ctx.beginPath();
+      ctx.moveTo(MINIMAP_X - 4, y);
+      ctx.lineTo(MINIMAP_X + MINIMAP_W + 4, y);
+      ctx.stroke();
+      label(ctx, layer.shortName ?? layer.id, MINIMAP_X + 4, y + 10, 8, "#a09888");
+    }
   }
 
   function toggleFullMap() {
@@ -140,6 +163,7 @@ export function createMapSystem(tileMap, getPlayer) {
 
     ctx.fillStyle = "rgba(20, 18, 24, 0.92)";
     ctx.fillRect(mapX, mapY, mapW, mapH);
+    drawLayerBands(ctx, mapX, mapY, mapW, mapH, mScaleY, 0.36);
 
     for (let ty = 0; ty < WORLD_H; ty += FULL_MAP_STEP) {
       const row = explored[ty];
@@ -160,21 +184,29 @@ export function createMapSystem(tileMap, getPlayer) {
         const ry = mapY + room.y * mScaleY;
         const rw = room.w * mScaleX;
         const rh = room.h * mScaleY;
+        const knownRoom = room.type === "entrance" || room.type === "exit" || isRoomExplored(room);
+        if (!knownRoom) {
+          if (hasExploredNearRoom(room)) drawUnknownRoomMarker(ctx, room, mapX, mapY, mScaleX, mScaleY);
+          continue;
+        }
         const color = ROOM_COLORS[room.type] || "#5c554c";
+        const icon = ROOM_TYPES[room.type]?.icon ?? "";
 
         ctx.strokeStyle = color;
         ctx.lineWidth = 1;
-        ctx.globalAlpha = 0.55;
+        ctx.globalAlpha = room.routeHint === "branch" ? 0.4 : 0.58;
         ctx.fillStyle = color;
         ctx.fillRect(rx, ry, rw, rh);
         ctx.globalAlpha = 1;
-        ctx.setLineDash([2, 3]);
+        ctx.setLineDash(room.routeHint === "branch" ? [2, 3] : []);
         ctx.strokeRect(rx, ry, rw, rh);
         ctx.setLineDash([]);
 
         const labelX = rx + Math.max(0, rw / 2);
         const labelY = ry + Math.max(8, rh / 2);
-        label(ctx, room.name, labelX, labelY, 10, "#f1ead9");
+        label(ctx, icon, labelX, labelY - 5, 12, "#f1ead9");
+        label(ctx, room.name, labelX, labelY + 7, 9, "#f1ead9");
+        if (room.riskTier >= 3) label(ctx, "RISK", labelX, labelY + 19, 8, "#ffb3ba");
       }
     }
 
@@ -201,8 +233,9 @@ export function createMapSystem(tileMap, getPlayer) {
     ctx.lineWidth = 1;
     ctx.strokeRect(mapX, mapY, mapW, mapH);
 
-    label(ctx, "Map", mapX + 10, mapY + 22, 16, "#f1ead9");
-    label(ctx, "Press M to close", mapX + 10, mapY + 40, 11, "#8b8173");
+    const mapRule = tileMap.getMapRule?.();
+    label(ctx, `Ink Dive Map / ${mapRule?.shortName || "unknown"}`, mapX + 10, mapY + 22, 16, "#f1ead9");
+    label(ctx, mapRule?.desc || "Depth routes, side caves, pressure rooms", mapX + 10, mapY + 40, 11, "#8b8173");
 
     const lx = mapX + mapW - 148;
     const ly = mapY + 12;
@@ -224,8 +257,87 @@ export function createMapSystem(tileMap, getPlayer) {
       const y = rly + i * 13;
       ctx.fillStyle = color;
       ctx.fillRect(lx, y, 6, 6);
-      label(ctx, type[0].toUpperCase() + type.slice(1), lx + 12, y + 6, 10, "#a09888");
+      const icon = ROOM_TYPES[type]?.icon ?? "";
+      label(ctx, `${icon} ${type[0].toUpperCase() + type.slice(1)}`, lx + 12, y + 6, 10, "#a09888");
     });
+  }
+
+  function drawLayerBands(ctx, x, y, w, h, yScale, alpha) {
+    for (const layer of MAP_LAYERS) {
+      const bandY = y + layer.yRange[0] * yScale;
+      const bandH = Math.max(2, (layer.yRange[1] - layer.yRange[0]) * yScale);
+      ctx.fillStyle = layer.bgTint.replace(/[\d.]+\)$/, `${alpha})`);
+      ctx.fillRect(x, bandY, w, bandH);
+      if (w > 300) {
+        ctx.strokeStyle = "rgba(241,234,217,0.1)";
+        ctx.beginPath();
+        ctx.moveTo(x, bandY);
+        ctx.lineTo(x + w, bandY);
+        ctx.stroke();
+        label(ctx, layer.name, x + 12, bandY + 16, 10, "#a09888");
+      }
+    }
+  }
+
+  function isRoomExplored(room) {
+    const samples = [
+      [room.x + room.w / 2, room.y + room.h / 2],
+      [room.x + 2, room.y + 2],
+      [room.x + room.w - 2, room.y + 2],
+      [room.x + 2, room.y + room.h - 2],
+      [room.x + room.w - 2, room.y + room.h - 2],
+    ];
+    return samples.some(([x, y]) => {
+      const tx = Math.max(0, Math.min(WORLD_W - 1, Math.floor(x)));
+      const ty = Math.max(0, Math.min(WORLD_H - 1, Math.floor(y)));
+      return Boolean(explored[ty]?.[tx]);
+    });
+  }
+
+  function hasExploredNearRoom(room) {
+    const minX = Math.max(0, room.x - 8);
+    const maxX = Math.min(WORLD_W - 1, room.x + room.w + 8);
+    const minY = Math.max(0, room.y - 8);
+    const maxY = Math.min(WORLD_H - 1, room.y + room.h + 8);
+    for (let y = minY; y <= maxY; y += 4) {
+      if (explored[y]?.[minX] || explored[y]?.[maxX]) return true;
+    }
+    for (let x = minX; x <= maxX; x += 4) {
+      if (explored[minY]?.[x] || explored[maxY]?.[x]) return true;
+    }
+    return false;
+  }
+
+  function drawUnknownRoomMarker(ctx, room, mapX, mapY, mScaleX, mScaleY) {
+    const cx = mapX + (room.x + room.w / 2) * mScaleX;
+    const cy = mapY + (room.y + room.h / 2) * mScaleY;
+    const w = Math.max(14, Math.min(24, room.w * mScaleX * 0.5));
+    const h = Math.max(10, Math.min(18, room.h * mScaleY * 0.5));
+    const hash = Math.abs((room.x * 37 + room.y * 53 + room.w * 11 + room.h * 17) % 5);
+    ctx.save();
+    ctx.globalAlpha = 0.22;
+    ctx.fillStyle = "#d8cfb8";
+    ctx.fillRect(cx - w / 2, cy - h / 2, w, h);
+    ctx.globalAlpha = 0.36;
+    ctx.fillStyle = "#05070b";
+    ctx.fillRect(cx - w / 2 - 2, cy - h / 2 - 2, w + 4, 2);
+    ctx.fillRect(cx - w / 2 - 2, cy + h / 2, w + 4, 2);
+    ctx.fillRect(cx - w / 2 - 2, cy - h / 2, 2, h);
+    ctx.fillRect(cx + w / 2, cy - h / 2, 2, h);
+    ctx.globalAlpha = 0.62;
+    ctx.strokeStyle = "#8b8173";
+    ctx.setLineDash([2, 3]);
+    ctx.strokeRect(cx - w / 2 - 4, cy - h / 2 - 4, w + 8, h + 8);
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#f2b84b";
+    ctx.fillRect(cx - w / 2 - 6 + hash, cy - h / 2 - 6, 4, 2);
+    ctx.fillRect(cx + w / 2 + 2 - hash, cy + h / 2 + 4, 4, 2);
+    ctx.fillStyle = "#d8cfb8";
+    ctx.fillRect(cx - 1, cy - 5, 4, 2);
+    ctx.fillRect(cx + 1, cy - 3, 2, 4);
+    ctx.fillRect(cx - 1, cy + 3, 3, 2);
+    label(ctx, "?", cx - 3, cy + 5, 12, "#f7f0df");
+    ctx.restore();
   }
 
   function reset() {

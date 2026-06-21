@@ -37,7 +37,7 @@ export function createArtworkCompletion() {
   function addDiscovery(item, isJackpot = false) {
     state.discoveries.push({ item: { ...item }, jackpot: isJackpot });
     state.totalDiscoveries++;
-    if (isJackpot) state.jackpitsHit++;
+    if (isJackpot) state.jackpotsHit++;
 
     // 应用完整度
     const value = isJackpot ? (item.jackpotCompletionValue || item.baseValue) : item.baseValue;

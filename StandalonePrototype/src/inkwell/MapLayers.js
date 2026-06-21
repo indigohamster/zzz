@@ -1,52 +1,57 @@
 ﻿// MapLayers.js — 分层地图数据结构
 // 定义浅层/中层/深层的生成参数
 
+import { TUNING } from "../core/TuningConfig.js?v=3";
+
 export const MAP_LAYERS = [
   {
     id: "shallow",
-    name: "浅层草稿区",
+    name: "浅海草稿礁",
+    shortName: "REEF",
     depthRange: [0, 1],       // 深度索引范围
-    yRange: [30, 80],         // 世界 Y 坐标范围 (tile)
+    yRange: TUNING.layers.shallow.yRange, // 世界 Y 坐标范围 (tile)
     enemyLevel: 1,
     rewardMultiplier: 1.0,
     inkPressure: 0.2,         // 墨压消耗速率
     tileTheme: "paper",       // 主 tile 类型
     bgTint: "rgba(245,239,224,0.03)", // 背景色偏
     // 区域类型权重 [combat, resource, event, treasure, shop, danger, explore]
-    roomWeights: [1, 4, 3, 1, 1, 0, 3],
-    minRooms: 3,
-    maxRooms: 5,
-    description: "散落的草稿纸和未完成的线稿。墨还很淡，一切都刚开始。",
+    roomWeights: TUNING.layers.shallow.roomWeights,
+    minRooms: TUNING.layers.shallow.minRooms,
+    maxRooms: TUNING.layers.shallow.maxRooms,
+    description: "浅水像一层被照亮的草稿纸。资源多，路线宽，适合先找方向。",
   },
   {
     id: "middle",
-    name: "中层废稿区",
+    name: "中层废稿暗流",
+    shortName: "MID",
     depthRange: [1, 3],
-    yRange: [90, 155],
+    yRange: TUNING.layers.middle.yRange,
     enemyLevel: 2,
     rewardMultiplier: 1.6,
     inkPressure: 0.5,
     tileTheme: "graphite",
     bgTint: "rgba(40,38,34,0.06)",
-    roomWeights: [3, 2, 3, 2, 1, 2, 1],
-    minRooms: 3,
-    maxRooms: 5,
-    description: "旧作品的残影。被划掉的构图，半途而废的角色设定。墨开始变浓。",
+    roomWeights: TUNING.layers.middle.roomWeights,
+    minRooms: TUNING.layers.middle.minRooms,
+    maxRooms: TUNING.layers.middle.maxRooms,
+    description: "暗流把旧构图和废稿卷在一起。侧洞更多，路线开始分叉。",
   },
   {
     id: "deep",
-    name: "深层模板污染区",
+    name: "深层模板海沟",
+    shortName: "TRENCH",
     depthRange: [2, 5],
-    yRange: [165, 240],
+    yRange: TUNING.layers.deep.yRange,
     enemyLevel: 3,
     rewardMultiplier: 2.5,
     inkPressure: 0.9,
     tileTheme: "ink",
     bgTint: "rgba(10,8,12,0.12)",
-    roomWeights: [4, 1, 1, 0, 0, 3, 0],
-    minRooms: 2,
-    maxRooms: 4,
-    description: "AI 生成的完美图像在这里无限重复。你画过的每一笔都在反对这种完美。",
+    roomWeights: TUNING.layers.deep.roomWeights,
+    minRooms: TUNING.layers.deep.minRooms,
+    maxRooms: TUNING.layers.deep.maxRooms,
+    description: "深沟里重复着模板化的完美图像。压力更高，但发现物也更稀有。",
   },
 ];
 

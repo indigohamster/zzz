@@ -3,21 +3,56 @@ body {
   width: 100%;
   height: 100%;
   margin: 0;
-  background: #171717;
+  background: #05070b;
   overflow: hidden;
-  font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+  font-family: "Courier New", "Microsoft YaHei", "Segoe UI", monospace;
+  color: #f7f0df;
+  image-rendering: pixelated;
 }
 
 body {
   display: grid;
   place-items: center;
+  background:
+    linear-gradient(45deg, rgba(240, 217, 165, 0.035) 25%, transparent 25% 75%, rgba(240, 217, 165, 0.035) 75%),
+    linear-gradient(45deg, rgba(125, 211, 252, 0.025) 25%, transparent 25% 75%, rgba(125, 211, 252, 0.025) 75%),
+    radial-gradient(circle at 50% 0%, #273244 0%, #101520 48%, #05070b 100%);
+  background-position: 0 0, 4px 4px, 0 0;
+  background-size: 8px 8px, 8px 8px, auto;
 }
 
 #game {
   width: min(100vw, 177.777vh);
   height: min(56.25vw, 100vh);
   image-rendering: pixelated;
-  background: #f4efe3;
+  image-rendering: crisp-edges;
+  background: #0d1320;
+  box-shadow:
+    0 0 0 4px #02040a,
+    0 0 0 8px #f0d9a5,
+    0 0 0 12px #151a22,
+    0 22px 0 rgba(0, 0, 0, 0.24),
+    0 30px 72px rgba(0, 0, 0, 0.68);
   touch-action: none;
   user-select: none;
+  outline: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+body::before {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.028) 50%, rgba(0, 0, 0, 0.035) 50%);
+  background-size: 100% 4px;
+  mix-blend-mode: soft-light;
+}
+
+body::after {
+  box-shadow: inset 0 0 96px rgba(0, 0, 0, 0.72);
 }

@@ -79,15 +79,36 @@ export function createDrawingCanvas(drawPanel) {
       const tool = stroke.tool === "eraser" ? "eraser" : "pencil";
       ctx.save();
       ctx.globalCompositeOperation = tool === "eraser" ? "destination-out" : "source-over";
-      ctx.strokeStyle = tool === "eraser" ? "rgba(0,0,0,1)" : "#111";
-      ctx.lineWidth = tool === "eraser" ? 18 : 4;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
-      ctx.stroke();
+      drawPixelStroke(ctx, points, tool === "eraser" ? 18 : 5, tool === "eraser" ? "rgba(0,0,0,1)" : "#05070b");
       ctx.restore();
+    }
+  }
+
+  function drawPixelStroke(ctx, points, size, color) {
+    const step = Math.max(2, Math.floor(size * 0.45));
+    ctx.fillStyle = color;
+    for (let i = 1; i < points.length; i++) {
+      const a = points[i - 1];
+      const b = points[i];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const distance = Math.max(1, Math.hypot(dx, dy));
+      const samples = Math.max(1, Math.ceil(distance / step));
+      for (let s = 0; s <= samples; s++) {
+        const t = s / samples;
+        stampPixel(ctx, a.x + dx * t, a.y + dy * t, size);
+      }
+    }
+  }
+
+  function stampPixel(ctx, x, y, size) {
+    const snappedX = Math.floor(x / 2) * 2;
+    const snappedY = Math.floor(y / 2) * 2;
+    const half = Math.floor(size / 2);
+    ctx.fillRect(snappedX - half, snappedY - half, size, size);
+    if (size <= 6) {
+      ctx.fillRect(snappedX - half + 1, snappedY - half - 1, Math.max(1, size - 2), 1);
+      ctx.fillRect(snappedX - half + 1, snappedY + half, Math.max(1, size - 2), 1);
     }
   }
 

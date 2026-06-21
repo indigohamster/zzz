@@ -1,4 +1,4 @@
-import { TILE } from "../core/config.js";
+import { TILE } from "../core/config.js?v=27";
 import { label } from "../core/render.js";
 
 const MATERIALS = {

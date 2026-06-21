@@ -1,33 +1,37 @@
-import { H, TILE, W, WORLD_H, WORLD_W } from "../core/config.js";
-import { label } from "../core/render.js";
-import { drawInkwellBackground } from "../inkwell/Background.js";
-import { drawInkwellLighting } from "../inkwell/Lighting.js";
-import { createNpcManager } from "../inkwell/NPC.js?v=25";
-import { createPhysics } from "../inkwell/Physics.js";
-import { createPlayer } from "../inkwell/Player.js?v=32";
-import { createTileMap } from "../inkwell/TileMap.js";
-import { createLootManager } from "../inkwell/Loot.js";
+import { H, TILE, W, WORLD_H, WORLD_W } from "../core/config.js?v=27";
+import { TUNING } from "../core/TuningConfig.js?v=3";
+import { drawPixelPanel, label, pixelText } from "../core/render.js?v=27";
+import { drawInkwellBackground } from "../inkwell/Background.js?v=4";
+import { drawInkwellLighting } from "../inkwell/Lighting.js?v=2";
+import { createNpcManager } from "../inkwell/NPC.js?v=26";
+import { createStoryNpcManager } from "../inkwell/StoryNPC.js?v=2";
+import { createPhysics } from "../inkwell/Physics.js?v=2";
+import { createPlayer } from "../inkwell/Player.js?v=36";
+import { createTileMap } from "../inkwell/TileMap.js?v=5";
+import { createLootManager } from "../inkwell/Loot.js?v=2";
 import { createPortalManager } from "../inkwell/Portal.js";
-import { BASIC_SLASH_ATTACK, DEBUG_ATTACK_ANGLE, DEBUG_ATTACK_HITBOX, DEBUG_ATTACK_STATE } from "../inkwell/AttackController.js?v=35";
+import { BASIC_SLASH_ATTACK, DEBUG_ATTACK_ANGLE, DEBUG_ATTACK_HITBOX, DEBUG_ATTACK_STATE } from "../inkwell/AttackController.js?v=36";
 import { createCombatSystem } from "../inkwell/CombatSystem.js?v=25";
-import { createMapSystem } from "../inkwell/MapSystem.js";
+import { createMapSystem } from "../inkwell/MapSystem.js?v=7";
+import { drawForegroundPixels, drawPixelPostProcess } from "../inkwell/PixelPolish.js?v=1";
 import { createEcologyManager } from "../ecology/EcologyManager.js";
-import { placeGatesOnMap, updateGates, drawGates, findNearestGate } from "../ecology/CanvasGate.js";
-import { createSubMapScene } from "../ecology/SubMapScene.js";
-import { createArtworkCompletion } from "../ecology/ArtworkCompletion.js";
-import { shouldSpawnRift, rollRiftType, createRiftInstance, findNearestRift, updateRifts, drawRifts, RIFT_TYPES } from "../ecology/CanvasRift.js";
-import { createRiftWorld } from "../ecology/RiftWorld.js";
+import { placeGatesOnMap, updateGates, drawGates, findNearestGate } from "../ecology/CanvasGate.js?v=2";
+import { createSubMapScene } from "../ecology/SubMapScene.js?v=3";
+import { createArtworkCompletion } from "../ecology/ArtworkCompletion.js?v=2";
+import { applyGateConsequence } from "../ecology/GateConsequences.js?v=1";
+import { shouldSpawnRift, rollRiftType, createRiftInstance, findNearestRift, updateRifts, drawRifts, RIFT_TYPES } from "../ecology/CanvasRift.js?v=2";
+import { createRiftWorld } from "../ecology/RiftWorld.js?v=3";
 import { createRewardOverlay } from "../game/builds/RewardOverlay.js?v=2";
 import { generateRelicChoices, generateEvolutionChoices } from "../game/builds/RewardGenerator.js?v=32";
 import { getWeaponTypeFromProfile } from "../game/builds/WeaponArchetypes.js?v=32";
-import { getLayerByDepth, MAP_LAYERS } from "../inkwell/MapLayers.js";
+import { getLayerByDepth, MAP_LAYERS } from "../inkwell/MapLayers.js?v=4";
 import {
   ALL_NIGHT_BODY_COST,
   ALL_NIGHT_EXTENSION_FRAMES,
   NIGHT_DURATION_FRAMES,
   OVERTIME_BODY_COST,
   OVERTIME_EXTENSION_FRAMES,
-} from "../inkwell/InkwellConfig.js";
+} from "../inkwell/InkwellConfig.js?v=2";
 
 const BASIC_SLASH = {
   name: "BasicSlash",
@@ -37,8 +41,19 @@ const BASIC_SLASH = {
   range: BASIC_SLASH_ATTACK.range,
 };
 const lootWeaponStub = { damage: BASIC_SLASH.damage, reach: BASIC_SLASH.range };
+const FLOW_MAX = TUNING.flow?.max ?? 100;
+const FLOW_RUSH_FRAMES = Math.max(1, Math.round((TUNING.flow?.rushSeconds ?? 10) * 60));
+const FLOW_DECAY_PER_FRAME = (TUNING.flow?.decayPerSecond ?? 1.5) / 60;
+const DISCOVERY_ECHO_LIFE = 64;
+const EXPLORATION_SITE_PROFILES = [
+  { id: "margin_note", name: "Margin note", color: "#f0d9a5", roomTypes: ["explore", "event", "resource"], reward: "ink" },
+  { id: "breathing_ink", name: "Breathing ink", color: "#7dd3fc", roomTypes: ["rift", "danger", "combat"], reward: "flow" },
+  { id: "folded_receipt", name: "Folded receipt", color: "#f2b84b", roomTypes: ["shop", "treasure", "event"], reward: "material" },
+  { id: "wrong_shadow", name: "Wrong shadow", color: "#b23b48", roomTypes: ["danger", "rift", "combat"], reward: "rare" },
+  { id: "warm_stain", name: "Warm stain", color: "#d8cfb8", roomTypes: ["resource", "explore", "treasure"], reward: "body" },
+];
 
-export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame, onFinish }) {
+export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, gameState, getFrame, onFinish }) {
   let toolMode = 1;
   let finished = false;
   let awaitingTimeChoice = false;
@@ -59,11 +74,28 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     bossName: "",
     materialsCollected: 0,
     itemsCollected: 0,
+    canvasPressure: 0,
+    canvasConsequences: [],
+    gateReturnDrifts: 0,
+    latestGateReturnRoom: "",
+    mapRule: null,
+    flow: 0,
+    flowRushFrames: 0,
+    flowRushCount: 0,
+    flowMessage: "",
+    flowMessageColor: "#7dd3fc",
+    flowMessageFrames: 0,
+    flowEvents: 0,
+    explorationFinds: 0,
+    latestDiscoveryName: "",
+    dayCarryover: null,
+    dayCarryoverApplied: false,
   };
 
   const tileMap = createTileMap(ctx);
   const physics = createPhysics(tileMap);
   let npcManager;
+  let storyNpcManager;
   let lootManager;
   let portalManager;
   const hitEffects = [];
@@ -85,7 +117,8 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
   });
   const player = playerController.state;
   const combatSystem = createCombatSystem({ player, run });
-  npcManager = createNpcManager({ physics, player, run, tileMap, combat: combatSystem });
+  npcManager = createNpcManager({ physics, player, run, tileMap, combat: combatSystem, gameState });
+  storyNpcManager = createStoryNpcManager({ player, tileMap, run, gameState });
   lootManager = createLootManager({ tileMap, player, weapon: lootWeaponStub, run });
   portalManager = createPortalManager({ player, onEnter: () => finish("boss") });
   const mapSystem = createMapSystem(tileMap, () => player);
@@ -98,6 +131,10 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
   let activeRift = null;
   let riftWorld = null;
   let riftNestDepth = 0;
+  const flowVisitedRooms = new Set();
+  let currentFlowRoomId = "";
+  let explorationSites = [];
+  const discoveryEchoes = [];
 
   
   function spawnRiftsOnMap() {
@@ -142,14 +179,36 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     run.materialsCollected = 0;
     run.itemsCollected = 0;
     run.artworkCompletion = 0;
+    run.canvasPressure = 0;
+    run.canvasConsequences = [];
+    run.latestGateConsequence = null;
+    run.gateReturnDrifts = 0;
+    run.latestGateReturnRoom = "";
     run.currentLayer = "shallow";
     run.deepestLayer = "shallow";
+    run.flow = 0;
+    run.flowRushFrames = 0;
+    run.flowRushCount = 0;
+    run.flowMessage = "";
+    run.flowMessageFrames = 0;
+    run.flowEvents = 0;
+    run.explorationFinds = 0;
+    run.latestDiscoveryName = "";
+    run.dayCarryover = getNightCarryover();
+    run.dayCarryoverApplied = false;
+    flowVisitedRooms.clear();
+    currentFlowRoomId = "";
+    discoveryEchoes.length = 0;
     tileMap.generate();
+    run.mapRule = tileMap.getMapRule?.() ?? null;
+    spawnExplorationSites();
     lootManager.reset();
     playerController.reset();
+    applyDayCarryoverToNight();
     combatSystem.reset();
     npcManager.reset();
     npcManager.logWeaknessTable();
+    storyNpcManager.reset();
     portalManager.reset();
     mapSystem.reset();
     ecologyManager.reset();
@@ -162,6 +221,35 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     riftNestDepth = 0;
     spawnRiftsOnMap();
     rewardOverlay.hide();
+  }
+
+  function getNightCarryover() {
+    const carry = gameState?.nightCarryover ?? {};
+    const status = gameState?.status ?? {};
+    return {
+      label: carry.label ?? "QUIET DAY",
+      action: carry.action ?? "carry the day",
+      color: carry.color ?? "#f0d9a5",
+      stress: Math.round(carry.stress ?? status.stress ?? 0),
+      fatigue: Math.round(carry.fatigue ?? status.fatigue ?? 0),
+      inspiration: Math.round(carry.inspiration ?? status.inspiration ?? 0),
+      scope: Math.round(carry.scope ?? 0),
+      morale: Math.round(carry.morale ?? 0),
+      deadline: Math.round(carry.deadline ?? 0),
+      reputation: Math.round(carry.reputation ?? 0),
+      hpPenalty: Math.max(0, Math.round(carry.hpPenalty ?? Math.min(22, (status.fatigue ?? 0) / 6))),
+      inkPenalty: Math.max(0, Math.round(carry.inkPenalty ?? Math.min(18, (status.stress ?? 0) / 7))),
+      flowBonus: Math.max(0, Math.round(carry.flowBonus ?? Math.min(42, (status.inspiration ?? 0) / 3))),
+    };
+  }
+
+  function applyDayCarryoverToNight() {
+    const carry = run.dayCarryover;
+    if (!carry || run.dayCarryoverApplied) return;
+    if (carry.hpPenalty > 0) player.hp = Math.max(42, player.hp - carry.hpPenalty);
+    if (carry.inkPenalty > 0) player.ink = Math.max(42, player.ink - carry.inkPenalty);
+    if (carry.flowBonus > 0) addFlow(carry.flowBonus, "day spark", carry.color);
+    run.dayCarryoverApplied = true;
   }
 
   function attack(attackController, aim, currentWeapon) {
@@ -196,10 +284,11 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
       if (!isHit) continue;
 
       attackController.markHit(npc);
+      const rushDamage = getInkRushDamageMultiplier();
       const strike = combatSystem.strikeNpc({
         npc,
         npcManager,
-        baseDamage: attackController.getDamage(),
+        baseDamage: Math.max(1, Math.round(attackController.getDamage() * rushDamage)),
         direction: hitbox.facing,
         weapon,
         attackState: attackController.state,
@@ -214,11 +303,13 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
 
       if (npc.hp <= 0) {
         run.kills++;
+        addFlow(npc.boss ? (TUNING.flow?.bossKill ?? 60) : (TUNING.flow?.kill ?? 16), npc.boss ? "boss broken" : "enemy inked", npc.boss ? "#f2b84b" : "#b23b48");
         const ecoHit = ecologyManager.onAttackHit(npc.x, npc.y);
         if (npc.boss && !npc.rewardDropped) {
           npc.rewardDropped = true;
           run.bossName = npc.variant?.name ?? "Unknown Boss";
           lootManager.dropBossRewards(npc.x, npc.y);
+          addFlow(TUNING.flow?.roomClear ?? 24, "boss reward", "#f2b84b");
           portalManager.spawn(npc.x, npc.y);
         }
       }
@@ -504,6 +595,403 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     return Math.max(0, NIGHT_DURATION_FRAMES + addedTimeFrames - elapsedFrames());
   }
 
+  function addTimeFrames(frames) {
+    const safeFrames = Math.max(0, Math.round(frames ?? 0));
+    if (safeFrames > 0) addedTimeFrames += safeFrames;
+  }
+
+  function updateFlow() {
+    if (run.flowRushFrames > 0) {
+      run.flowRushFrames--;
+    } else if (run.flow > 0) {
+      run.flow = clampValue(run.flow - FLOW_DECAY_PER_FRAME, 0, FLOW_MAX);
+    }
+    if (run.flowMessageFrames > 0) run.flowMessageFrames--;
+  }
+
+  function addFlow(amount, label, color = "#7dd3fc") {
+    const safeAmount = Math.max(0, Math.round(amount ?? 0));
+    if (safeAmount <= 0) return;
+
+    run.flowEvents++;
+    run.flowMessageColor = color;
+
+    if (run.flowRushFrames > 0) {
+      run.flowRushFrames = Math.min(FLOW_RUSH_FRAMES, run.flowRushFrames + Math.round(safeAmount * 1.35));
+      player.ink = Math.min(100 + (player.maxInkBonus ?? 0), player.ink + safeAmount * 0.05);
+      run.flowMessage = label + " extends RUSH";
+      run.flowMessageFrames = 70;
+      return;
+    }
+
+    run.flow = clampValue((run.flow ?? 0) + safeAmount, 0, FLOW_MAX);
+    run.flowMessage = label + " +" + safeAmount + " FLOW";
+    run.flowMessageFrames = 85;
+
+    if (run.flow >= FLOW_MAX) triggerInkRush(label, color);
+  }
+
+  function triggerInkRush(label, color) {
+    run.flow = 0;
+    run.flowRushFrames = FLOW_RUSH_FRAMES;
+    run.flowRushCount++;
+    run.flowMessage = "INK RUSH: " + label;
+    run.flowMessageColor = color;
+    run.flowMessageFrames = 150;
+    player.ink = Math.min(100 + (player.maxInkBonus ?? 0), player.ink + (TUNING.flow?.rushInkGain ?? 18));
+  }
+
+  function getInkRushDamageMultiplier() {
+    return run.flowRushFrames > 0 ? (TUNING.flow?.rushDamageMultiplier ?? 1.22) : 1;
+  }
+
+  function trackFlowRoom() {
+    const room = getPlayerRoom();
+    if (!room) return;
+    const key = roomKey(room);
+    if (key === currentFlowRoomId) return;
+    currentFlowRoomId = key;
+    if (flowVisitedRooms.has(key)) return;
+    flowVisitedRooms.add(key);
+    if (room.type === "entrance" || room.type === "exit" || room.type === "boss") return;
+
+    const risky = room.type === "danger" || room.type === "rift" || room.type === "combat";
+    addFlow(
+      risky ? (TUNING.flow?.dangerRoom ?? 18) : (TUNING.flow?.exploreRoom ?? 12),
+      "new " + formatFlowRoom(room.type),
+      risky ? "#b23b48" : "#7dd3fc"
+    );
+  }
+
+  function getPlayerRoom() {
+    const tx = player.x / TILE;
+    const ty = player.y / TILE;
+    return tileMap.getRooms().find((room) => pointInRoom(tx, ty, room)) ?? null;
+  }
+
+  function roomKey(room) {
+    return room.id ?? (room.type + ":" + room.x + ":" + room.y);
+  }
+
+  function formatFlowRoom(type) {
+    const labels = {
+      combat: "fight room",
+      resource: "supply pocket",
+      event: "odd room",
+      treasure: "cache room",
+      shop: "lost shop",
+      danger: "danger room",
+      explore: "side cave",
+      rift: "rift room",
+    };
+    return labels[type] ?? "room";
+  }
+
+  function spawnExplorationSites() {
+    explorationSites = [];
+    const maxSites = TUNING.exploration?.maxSites ?? 14;
+    const chance = TUNING.exploration?.siteChance ?? 0.72;
+    const rooms = tileMap.getRooms()
+      .filter((room) => !["entrance", "exit", "boss"].includes(room.type))
+      .sort((a, b) => (a.depthRank ?? 0) - (b.depthRank ?? 0) || a.y - b.y);
+
+    for (const room of rooms) {
+      if (explorationSites.length >= maxSites) break;
+      if (Math.random() > chance && room.type !== "explore" && room.type !== "event") continue;
+      const profile = pickExplorationProfile(room);
+      if (!profile) continue;
+      const rare = profile.reward === "rare" || Math.random() < 0.12 + Math.min(0.14, (room.depthRank ?? 0) * 0.035);
+      explorationSites.push({
+        id: "site-" + explorationSites.length + "-" + roomKey(room),
+        roomId: roomKey(room),
+        x: (room.x + room.w * (0.34 + Math.random() * 0.32)) * TILE,
+        y: (room.y + room.h * (0.52 + Math.random() * 0.22)) * TILE,
+        name: rare ? "Rare " + profile.name : profile.name,
+        color: rare ? "#f2b84b" : profile.color,
+        reward: rare ? "rare" : profile.reward,
+        rare,
+        collected: false,
+      });
+    }
+  }
+
+  function pickExplorationProfile(room) {
+    const pool = EXPLORATION_SITE_PROFILES.filter((profile) => profile.roomTypes.includes(room.type));
+    const list = pool.length > 0 ? pool : EXPLORATION_SITE_PROFILES;
+    return list[Math.floor(Math.random() * list.length)] ?? null;
+  }
+
+  function inspectNearestExplorationSite() {
+    const site = findNearestExplorationSite();
+    if (!site) return false;
+    site.collected = true;
+    run.explorationFinds++;
+    run.latestDiscoveryName = site.name;
+
+    const materialGain = TUNING.exploration?.materialGain ?? 2;
+    const inkGain = TUNING.exploration?.inkGain ?? 8;
+    const hpGain = TUNING.exploration?.hpGain ?? 3;
+    if (site.reward === "material" || site.reward === "rare") run.materialsCollected += site.rare ? materialGain + 2 : materialGain;
+    if (site.reward === "ink" || site.reward === "flow") player.ink = Math.min(100 + (player.maxInkBonus ?? 0), player.ink + inkGain);
+    if (site.reward === "body" || site.reward === "rare") player.hp = Math.min(100, player.hp + hpGain);
+    if (site.rare) run.itemsCollected++;
+    discoveryEchoes.push({ x: site.x, y: site.y, color: site.color, name: site.name, age: 0, life: DISCOVERY_ECHO_LIFE });
+
+    addFlow(site.rare ? (TUNING.exploration?.rareFlowGain ?? 42) : (TUNING.exploration?.flowGain ?? 26), "discovered " + site.name, site.color);
+    showMessage("discovered " + site.name, site.color, 150);
+    return true;
+  }
+
+  function findNearestExplorationSite() {
+    const radius = TUNING.exploration?.inspectRadiusPixels ?? 48;
+    let best = null;
+    let bestDist = radius;
+    for (const site of explorationSites) {
+      if (site.collected) continue;
+      const dist = Math.hypot(player.x - site.x, player.y - site.y);
+      if (dist < bestDist) {
+        best = site;
+        bestDist = dist;
+      }
+    }
+    return best;
+  }
+
+  function drawExplorationSites(ctx, cameraX, cameraY) {
+    const nearest = findNearestExplorationSite();
+    for (const site of explorationSites) {
+      if (site.collected) continue;
+      const x = Math.floor(site.x - cameraX);
+      const y = Math.floor(site.y - cameraY);
+      if (x < -24 || y < -24 || x > W + 24 || y > H + 24) continue;
+      const active = site === nearest;
+      const pulse = 0.65 + Math.sin(getFrame() * 0.07 + site.x * 0.01) * 0.25;
+      ctx.save();
+      drawDiscoverySiteAura(ctx, site, x, y, pulse, active);
+      drawDiscoverySiteSprite(ctx, site, x, y, pulse, active);
+      drawDiscoverySparkles(ctx, site, x, y, active);
+      ctx.restore();
+      if (active) drawDiscoveryInspectPanel(ctx, site, x, y);
+    }
+  }
+
+  function drawDiscoverySiteAura(ctx, site, x, y, pulse, active) {
+    ctx.globalAlpha = active ? 0.35 : 0.12 + pulse * 0.08;
+    ctx.fillStyle = site.color;
+    ctx.fillRect(x - 18, y - 2, 5, 2);
+    ctx.fillRect(x + 13, y - 2, 5, 2);
+    ctx.fillRect(x - 2, y - 18, 2, 5);
+    ctx.fillRect(x - 2, y + 13, 2, 5);
+    ctx.globalAlpha = active ? 0.22 : 0.12;
+    ctx.fillRect(x - 12, y - 9, 24, 2);
+    ctx.fillRect(x - 12, y + 7, 24, 2);
+    ctx.fillRect(x - 9, y - 12, 2, 24);
+    ctx.fillRect(x + 7, y - 12, 2, 24);
+    ctx.globalAlpha = 1;
+  }
+
+  function drawDiscoverySiteSprite(ctx, site, x, y, pulse, active) {
+    const bob = Math.round(Math.sin(getFrame() * 0.08 + site.y * 0.02) * 1.5);
+    const sy = y + bob;
+    ctx.globalAlpha = 0.38;
+    ctx.fillStyle = "#05070b";
+    ctx.fillRect(x - 9, sy + 9, 18, 3);
+    ctx.globalAlpha = active ? 1 : 0.78 + pulse * 0.18;
+
+    ctx.fillStyle = "#05070b";
+    ctx.fillRect(x - 9, sy - 9, 18, 18);
+    ctx.fillStyle = "#151b24";
+    ctx.fillRect(x - 7, sy - 7, 14, 14);
+    ctx.fillStyle = "#25303a";
+    ctx.fillRect(x - 5, sy - 5, 10, 10);
+    ctx.fillStyle = site.color;
+    ctx.fillRect(x - 6, sy - 5, 12, 3);
+    ctx.fillRect(x - 5, sy - 2, 10, 7);
+    drawDiscoveryRewardGlyph(ctx, site, x, sy);
+
+    if (active) {
+      ctx.strokeStyle = "#f7f0df";
+      ctx.strokeRect(x - 11, sy - 11, 22, 22);
+    }
+    if (site.rare) {
+      ctx.strokeStyle = "#f2b84b";
+      ctx.strokeRect(x - 13, sy - 13, 26, 26);
+      ctx.fillStyle = "#f2b84b";
+      ctx.fillRect(x - 15, sy - 15, 5, 2);
+      ctx.fillRect(x + 10, sy - 15, 5, 2);
+      ctx.fillRect(x - 15, sy + 13, 5, 2);
+      ctx.fillRect(x + 10, sy + 13, 5, 2);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawDiscoveryRewardGlyph(ctx, site, x, y) {
+    ctx.fillStyle = "#f7f0df";
+    if (site.reward === "ink" || site.reward === "flow") {
+      ctx.fillRect(x - 1, y - 4, 3, 3);
+      ctx.fillRect(x - 2, y - 1, 5, 5);
+      ctx.fillRect(x - 1, y + 4, 3, 2);
+      return;
+    }
+    if (site.reward === "material") {
+      ctx.fillRect(x - 4, y - 4, 8, 2);
+      ctx.fillRect(x - 4, y, 8, 2);
+      ctx.fillRect(x - 3, y + 4, 6, 1);
+      return;
+    }
+    if (site.reward === "body") {
+      ctx.fillRect(x - 1, y - 5, 3, 11);
+      ctx.fillRect(x - 5, y - 1, 11, 3);
+      return;
+    }
+    ctx.fillStyle = "#05070b";
+    ctx.fillRect(x - 5, y - 5, 4, 12);
+    ctx.fillStyle = "#b23b48";
+    ctx.fillRect(x - 2, y - 6, 4, 12);
+    ctx.fillStyle = "#f7f0df";
+    ctx.fillRect(x + 2, y - 2, 3, 3);
+  }
+
+  function drawDiscoverySparkles(ctx, site, x, y, active) {
+    const count = site.rare ? 6 : 3;
+    for (let i = 0; i < count; i++) {
+      const phase = getFrame() * 0.07 + i * 2.1 + site.x * 0.013;
+      const reach = (site.rare ? 18 : 14) + (i % 2) * 4;
+      const sx = x + Math.round(Math.cos(phase) * reach);
+      const sy = y + Math.round(Math.sin(phase * 0.83) * reach * 0.55);
+      ctx.globalAlpha = active ? 0.82 : clampValue(0.28 + Math.sin(phase) * 0.18, 0.14, 0.52);
+      ctx.fillStyle = i % 3 === 0 ? "#f7f0df" : site.color;
+      ctx.fillRect(sx, sy, i % 2 === 0 ? 3 : 2, i % 2 === 0 ? 1 : 2);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawDiscoveryInspectPanel(ctx, site, x, y) {
+    const panelW = 132;
+    const panelH = 38;
+    const px = Math.floor(clampValue(x - panelW / 2, 10, W - panelW - 10));
+    const py = Math.floor(clampValue(y - 52, 14, H - panelH - 14));
+    drawPixelPanel(ctx, px, py, panelW, panelH, {
+      fill: "#111823",
+      border: "#05070b",
+      accent: site.color,
+      shine: "rgba(247,240,223,0.14)",
+      grid: "rgba(125,211,252,0.035)",
+    });
+    pixelText(ctx, "E inspect", px + 10, py + 17, 11, "#f7f0df", "#05070b");
+    label(ctx, site.name, px + 10, py + 30, 10, "#d8cfb8");
+    ctx.fillStyle = site.color;
+    ctx.fillRect(Math.floor(clampValue(x, px + 14, px + panelW - 16)), py + panelH - 2, 10, 4);
+  }
+
+  function updateDiscoveryEchoes() {
+    for (let i = discoveryEchoes.length - 1; i >= 0; i--) {
+      discoveryEchoes[i].age++;
+      if (discoveryEchoes[i].age >= discoveryEchoes[i].life) discoveryEchoes.splice(i, 1);
+    }
+  }
+
+  function drawDiscoveryEchoes(ctx, cameraX, cameraY) {
+    for (const echo of discoveryEchoes) {
+      const t = echo.age / Math.max(1, echo.life);
+      const x = Math.floor(echo.x - cameraX);
+      const y = Math.floor(echo.y - cameraY);
+      if (x < -64 || y < -64 || x > W + 64 || y > H + 64) continue;
+      const reach = Math.floor(12 + t * 30);
+      ctx.save();
+      ctx.globalAlpha = (1 - t) * 0.72;
+      ctx.strokeStyle = echo.color;
+      ctx.strokeRect(x - reach, y - Math.floor(reach * 0.58), reach * 2, Math.floor(reach * 1.16));
+      ctx.globalAlpha = (1 - t) * 0.44;
+      ctx.fillStyle = echo.color;
+      for (let i = 0; i < 8; i++) {
+        const phase = i * Math.PI * 0.25;
+        const px = x + Math.round(Math.cos(phase) * reach);
+        const py = y + Math.round(Math.sin(phase) * reach * 0.58);
+        ctx.fillRect(px, py, i % 2 === 0 ? 4 : 2, i % 2 === 0 ? 2 : 4);
+      }
+      ctx.globalAlpha = (1 - t) * 0.88;
+      pixelText(ctx, echo.name, Math.floor(clampValue(x - 46, 8, W - 126)), y - 20 - Math.floor(t * 14), 10, "#f7f0df", "#05070b");
+      ctx.restore();
+    }
+  }
+
+  function maybeGateReturnTeleport(nearGate, consequence, outcome) {
+    const chance = gateReturnDriftChance(consequence, outcome);
+    if (Math.random() > chance) return false;
+
+    const room = pickGateReturnRoom(consequence, outcome);
+    if (!room) return false;
+
+    const padding = TUNING.portalReturn.arrivalPaddingPixels ?? 28;
+    const minX = (room.x * TILE) + padding;
+    const maxX = ((room.x + room.w) * TILE) - padding;
+    const minY = (room.y * TILE) + padding;
+    const maxY = ((room.y + room.h) * TILE) - padding;
+    player.x = clampValue((room.x + room.w / 2) * TILE, minX, maxX);
+    player.y = clampValue((room.y + room.h / 2) * TILE, minY, maxY);
+    player.vx = 0;
+    player.vy = 0;
+    run.gateReturnDrifts++;
+    run.latestGateReturnRoom = room.type;
+    updateCamera();
+    showMessage("画布门把你送到了" + formatGateReturnRoom(room.type), consequence?.color ?? "#7dd3fc", 150);
+    return true;
+  }
+
+  function gateReturnDriftChance(consequence, outcome) {
+    const tuning = TUNING.portalReturn;
+    const choices = outcome?.choices ?? {};
+    const riskGap = Math.max(0, (outcome?.riskScore ?? 0) - (outcome?.careScore ?? 0));
+    let chance = tuning.baseChance ?? 0.2;
+    chance += riskGap * (tuning.riskGapScale ?? 0);
+    chance += (choices.riskyChoices ?? 0) * (tuning.riskyChoiceBonus ?? 0);
+    chance += (choices.forceActions ?? 0) * (tuning.forceActionBonus ?? 0);
+    chance += (choices.templateMistakes ?? 0) * (tuning.templateMistakeBonus ?? 0);
+
+    const pressure = consequence?.pressure ?? run.canvasPressure ?? 0;
+    if (pressure >= 60) chance += tuning.pressureBonus ?? 0;
+    if (pressure <= 20) chance += tuning.stablePressureBonus ?? 0;
+    if (outcome?.gateType === "ai_template") chance += tuning.aiTemplateBonus ?? 0;
+    if (outcome?.gateType === "horror_sketch") chance += tuning.horrorSketchBonus ?? 0;
+    return clampValue(chance, tuning.minChance ?? 0, tuning.maxChance ?? 1);
+  }
+
+  function pickGateReturnRoom(consequence, outcome) {
+    const rooms = tileMap.getRooms().filter((room) => (
+      room.type !== "entrance" &&
+      room.type !== "exit" &&
+      room.type !== "boss"
+    ));
+    if (rooms.length === 0) return null;
+
+    const risky = (outcome?.riskScore ?? 0) > (outcome?.careScore ?? 0) || consequence?.pressureDelta > 0;
+    const preferredTypes = risky
+      ? ["danger", "combat", "rift"]
+      : ["resource", "treasure", "explore", "shop", "event"];
+    const preferredRooms = rooms.filter((room) => preferredTypes.includes(room.type));
+    const pool = preferredRooms.length > 0 ? preferredRooms : rooms;
+    return pool[Math.floor(Math.random() * pool.length)] ?? rooms[0];
+  }
+
+  function formatGateReturnRoom(type) {
+    const labels = {
+      combat: "战斗房",
+      resource: "资源房",
+      event: "事件房",
+      treasure: "奖励房",
+      shop: "补给房",
+      danger: "危险房",
+      explore: "探索房",
+      rift: "裂隙房",
+    };
+    return labels[type] ?? "陌生房间";
+  }
+
+  function clampValue(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
   function finish(reason = "manual") {
     if (finished) return;
     finished = true;
@@ -515,6 +1003,7 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
       durationFrames: elapsedFrames(),
       timeLimitFrames: NIGHT_DURATION_FRAMES + addedTimeFrames,
       timeLeftFrames: timeLeftFrames(),
+      explorationSitesTotal: explorationSites.length,
     });
   }
 
@@ -527,6 +1016,11 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
       return;
     }
     if (mapSystem.isFullMapOpen()) { if (mouse.justLeft) mapSystem.closeFullMap(); return; }
+    if (storyNpcManager.isDialogueOpen()) {
+      storyNpcManager.update();
+      updateCamera();
+      return;
+    }
     if (rewardOverlay.isVisible()) {
       if (mouse.justLeft) {
         rewardOverlay.handleClick(mouse.x, mouse.y);
@@ -537,6 +1031,9 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     }
     playerController.update();
     trackPlayerDepth();
+    trackFlowRoom();
+    updateFlow();
+    updateDiscoveryEchoes();
     resolveAttackHits();
     triggerRoomRewardIfReady();
     combatSystem.update();
@@ -547,6 +1044,7 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
       return;
     }
     npcManager.update();
+    storyNpcManager.update();
     triggerRoomRewardIfReady();
     lootManager.update();
     portalManager.update();
@@ -581,6 +1079,7 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
       }
       return;
     }
+    if (storyNpcManager.handleKey(key)) return;
     if (ecologyManager.handleKey(key)) return;
     // Canvas gate entry
     if (key === "e") {
@@ -593,7 +1092,7 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
       const nearGate = findNearestGate(canvasGates, player.x, player.y, 50);
       if (nearGate && !nearGate.completed) {
         subMapType = nearGate.type;
-        subMapScene = createSubMapScene(subMapType, (discoveries, type) => {
+        subMapScene = createSubMapScene(subMapType, (discoveries, type, outcome) => {
           // ???????
           for (const d of discoveries) {
             const result = artworkCompletion.addDiscovery(d, d.isJackpot || false);
@@ -605,10 +1104,24 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
           subMapScene = null;
           subMapType = null;
           run.itemsCollected += discoveries.length;
+          const consequence = applyGateConsequence({
+            outcome,
+            gateType: type,
+            nearGate,
+            player,
+            weapon,
+            run,
+            npcManager,
+            addTimeFrames,
+          });
+          showMessage("画布门结算：" + (consequence?.name ?? "新的回流"), consequence?.color ?? "#7dd3fc", 180);
+          addFlow(TUNING.flow?.gateReturn ?? 42, "canvas gate", consequence?.color ?? "#7dd3fc");
+          maybeGateReturnTeleport(nearGate, consequence, outcome);
         });
         subMapScene.start();
         return;
       }
+      if (inspectNearestExplorationSite()) return;
     }
     if (rewardOverlay.isVisible()) return;
     if (awaitingTimeChoice) {
@@ -620,7 +1133,10 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     if (key === "1") toolMode = 1;
     if (key === "2") toolMode = 2;
     if (key === "e") {
-      if (!portalManager.tryEnter()) lootManager.openNearestChest();
+      if (!portalManager.tryEnter()) {
+        const opened = lootManager.openNearestChest();
+        if (opened) addFlow(TUNING.flow?.chest ?? 28, "cache opened", "#c9a846");
+      }
     }
     if (key === "f") {
       // Retreat: return to surface with collected items
@@ -654,52 +1170,69 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
   }
 
   function drawHud() {
-    // Layer info
-    const layerNames = { shallow: "?????", middle: "?????", deep: "???????" };
-    const layerColors = { shallow: "#f0d9a5", middle: "#8b8173", deep: "#8d1d25" };
+    const layerNames = { shallow: "SHALLOW DRAFT", middle: "MIDDLE SCRAPS", deep: "DEEP TEMPLATE" };
+    const layerColors = { shallow: "#f0d9a5", middle: "#b58b42", deep: "#7dd3fc" };
     const layer = run.currentLayer || "shallow";
-    ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(4, 4, 130, 22);
-    ctx.fillStyle = layerColors[layer] || "#f0d9a5";
-    ctx.font = "bold 11px Segoe UI, Microsoft YaHei, sans-serif";
-    ctx.fillText(layerNames[layer] || layer, 10, 19);
-
-    // Collection count
+    const accent = layerColors[layer] || "#f0d9a5";
     const collected = run.itemsCollected + run.materialsCollected + run.kills;
-    ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(W - 110, 4, 106, 22);
-    ctx.fillStyle = "#f0d9a5";
-    ctx.font = "11px Segoe UI, Microsoft YaHei, sans-serif";
-    ctx.fillText(`??: ${collected}  F ??`, W - 104, 19);
-
-
-    ctx.fillStyle = "rgba(241, 234, 217, 0.86)";
-    ctx.fillRect(16, H - 88, 352, 64);
-    ctx.fillStyle = "#151515";
-    ctx.fillRect(30, H - 66, 210, 8);
-    ctx.fillStyle = "#1d1b25";
-    ctx.fillRect(30, H - 66, 210 * (player.ink / 100), 8);
-    ctx.fillStyle = "#151515";
-    ctx.fillRect(30, H - 42, 210, 8);
-    ctx.fillStyle = "#9e2130";
-    ctx.fillRect(30, H - 42, 210 * (player.hp / 100), 8);
-    label(ctx, `ink ${Math.floor(player.ink)}%`, 252, H - 58, 12);
-    label(ctx, `body ${Math.floor(player.hp)}%`, 252, H - 34, 12);
     const weaponName = weapon.archetype?.displayName ?? "Sword";
     const attackPattern = weapon.archetype?.attackPattern ?? "arcSlash";
     const damage = weapon.finalStats?.damage ?? BASIC_SLASH.damage;
     const range = weapon.finalStats?.range ?? BASIC_SLASH.range;
-    label(ctx, `${weaponName}  ${attackPattern}  dmg ${damage}  range ${range}`, 24, H - 98, 14);
     const totalFrames = NIGHT_DURATION_FRAMES + addedTimeFrames;
-    label(ctx, `night ${formatTime(timeLeftFrames())} / ${formatTime(totalFrames)}`, 24, H - 116, 14);
 
-    ctx.fillStyle = "rgba(20,20,20,0.72)";
-    ctx.fillRect(W - 304, 20, 274, 106);
-    label(ctx, "A/D move  Space jump  Shift dash", W - 290, 44, 13, "#f7f0df");
-    label(ctx, "Left attack/mine  E chest/portal", W - 290, 66, 13, "#f7f0df");
-    label(ctx, "1 weapon  2 scraper  F return", W - 290, 88, 13, "#f7f0df");
-    label(ctx, `kills ${run.kills} chest ${run.chestsOpened} boss ${run.bossRewards}`, W - 290, 110, 13, "#f7f0df");
-    lootManager.drawInventory(ctx, W - 290, 128);
+    drawPixelPanel(ctx, 14, 14, 220, 50, { fill: "rgba(12,18,28,0.88)", accent });
+    pixelText(ctx, layerNames[layer] || layer.toUpperCase(), 28, 38, 14, accent);
+    pixelText(ctx, `loot ${collected}   F return`, 28, 56, 12, "#f7f0df");
+
+    const rushActive = run.flowRushFrames > 0;
+    const flowValue = rushActive ? run.flowRushFrames / FLOW_RUSH_FRAMES : run.flow / FLOW_MAX;
+    const flowColor = rushActive ? "#f2b84b" : "#7dd3fc";
+    drawPixelPanel(ctx, 14, 72, 220, 50, { fill: "rgba(8,11,18,0.84)", accent: flowColor });
+    pixelText(ctx, rushActive ? "INK RUSH " + Math.ceil(run.flowRushFrames / 60) + "s" : "FLOW", 28, 94, 13, flowColor);
+    drawMeter(28, 106, 178, 8, flowValue, flowColor, "#172033");
+    pixelText(ctx, rushActive ? "move+ atk+ ink+" : "chain explore / fight", 28, 120, 11, "#f7f0df");
+
+    if (run.flowMessageFrames > 0 && run.flowMessage) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, run.flowMessageFrames / 20);
+      drawPixelPanel(ctx, W / 2 - 172, 24, 344, 42, { fill: "rgba(8,11,18,0.90)", accent: run.flowMessageColor ?? "#7dd3fc" });
+      pixelText(ctx, run.flowMessage, W / 2 - 148, 51, 15, run.flowMessageColor ?? "#7dd3fc");
+      ctx.restore();
+    }
+
+    drawPixelPanel(ctx, 16, H - 126, 390, 102, { fill: "rgba(12,18,28,0.88)", accent: "#f0d9a5" });
+    pixelText(ctx, `NIGHT ${formatTime(timeLeftFrames())}/${formatTime(totalFrames)}`, 30, H - 98, 14, "#f0d9a5");
+    pixelText(ctx, `${weaponName}  ${attackPattern}`, 30, H - 78, 13, "#f7f0df");
+    pixelText(ctx, `dmg ${damage}  range ${range}`, 258, H - 78, 13, "#7dd3fc");
+    drawMeter(30, H - 60, 214, 10, player.ink / 100, "#7dd3fc", "#172033");
+    drawMeter(30, H - 38, 214, 10, player.hp / 100, "#b23b48", "#2a1118");
+    pixelText(ctx, `ink ${Math.floor(player.ink)}%`, 256, H - 51, 12, "#f7f0df");
+    pixelText(ctx, `body ${Math.floor(player.hp)}%`, 256, H - 29, 12, "#f7f0df");
+
+    drawPixelPanel(ctx, W - 318, 18, 288, 174, { fill: "rgba(8,11,18,0.82)", accent: "#7dd3fc" });
+    pixelText(ctx, "A/D move   Space jump   Shift dash", W - 300, 46, 12, "#f7f0df");
+    pixelText(ctx, "Left attack/mine   E chest/portal", W - 300, 68, 12, "#f7f0df");
+    pixelText(ctx, "1 weapon   2 scraper   M map", W - 300, 90, 12, "#f7f0df");
+    if (run.dayCarryover) {
+      pixelText(ctx, "day residue  " + run.dayCarryover.label, W - 300, 112, 11, run.dayCarryover.color ?? "#f0d9a5");
+      pixelText(ctx, `scope ${run.dayCarryover.scope ?? 0} morale ${run.dayCarryover.morale ?? 0} deadline ${run.dayCarryover.deadline ?? 0}`, W - 300, 130, 9, "#d8cfb8");
+      pixelText(ctx, `stress ${run.dayCarryover.stress}  fatigue ${run.dayCarryover.fatigue}  spark ${run.dayCarryover.inspiration}`, W - 300, 146, 9, "#d8cfb8");
+    }
+    pixelText(ctx, `kills ${run.kills}   chest ${run.chestsOpened}   finds ${run.explorationFinds}/${explorationSites.length}`, W - 300, 166, 11, "#f0d9a5");
+    lootManager.drawInventory(ctx, W - 290, 190);
+  }
+
+  function drawMeter(x, y, w, h, value, fill, empty) {
+    const clamped = Math.max(0, Math.min(1, value));
+    ctx.fillStyle = "#05070b";
+    ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
+    ctx.fillStyle = empty;
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = fill;
+    ctx.fillRect(x, y, Math.floor(w * clamped), h);
+    ctx.fillStyle = "rgba(255,255,255,0.20)";
+    ctx.fillRect(x + 2, y + 2, Math.max(0, Math.floor(w * clamped) - 4), 2);
   }
 
   function drawTimeChoice() {
@@ -740,6 +1273,7 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
         run.discoveries = (run.discoveries || 0) + 1;
         showMessage("???" + reward.jackpot.name, "#c9a846", 200);
       }
+      addFlow(TUNING.flow?.riftReturn ?? 34, "rift return", reward.jackpot ? "#c9a846" : "#7dd3fc");
       exitRiftWorld();
     }, riftNestDepth);
     riftWorld.start();
@@ -751,6 +1285,7 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     const nestedType = rollRiftType(parentRift.layerId || "deep");
     riftWorld = createRiftWorld(nestedType, (reward) => {
       run.itemsCollected += reward.itemsCollected || 0;
+      addFlow(TUNING.flow?.riftReturn ?? 34, "nested rift", "#c9a846");
       exitRiftWorld();
     }, riftNestDepth);
     riftWorld.start();
@@ -799,12 +1334,15 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     if (riftWorld) { riftWorld.draw(ctx); return; }
     const shake = playerController.attackController.getShakeOffset();
     const drawCamera = { x: camera.x - shake.x, y: camera.y - shake.y };
-    drawInkwellBackground(ctx, drawCamera);
+    drawInkwellBackground(ctx, drawCamera, run.dayCarryover);
     tileMap.draw(drawCamera.x, drawCamera.y);
     ecologyManager.draw(ctx, drawCamera.x, drawCamera.y);
     drawGates(ctx, canvasGates, drawCamera.x, drawCamera.y);
     drawRifts(ctx, canvasRifts, drawCamera.x, drawCamera.y);
+    drawDiscoveryEchoes(ctx, drawCamera.x, drawCamera.y);
+    drawExplorationSites(ctx, drawCamera.x, drawCamera.y);
     lootManager.draw(ctx, drawCamera.x, drawCamera.y);
+    storyNpcManager.draw(ctx, drawCamera.x, drawCamera.y);
     npcManager.draw(ctx, drawCamera.x, drawCamera.y);
     drawHitNpcColliders(drawCamera.x, drawCamera.y);
     drawHitEffects(drawCamera.x, drawCamera.y);
@@ -812,6 +1350,7 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     drawInkwellLighting(ctx, { camera: drawCamera, player, tileMap, npcs: npcManager.npcs });
     combatSystem.draw(ctx, drawCamera.x, drawCamera.y);
     playerController.draw(ctx, drawCamera.x, drawCamera.y);
+    drawForegroundPixels(ctx, drawCamera, run.currentLayer || "shallow");
     drawAttackDebug(drawCamera.x, drawCamera.y);
     drawAttackStateDebug();
     drawHud();
@@ -819,6 +1358,8 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     drawTimeChoice();
     rewardOverlay.render(ctx);
     mapSystem.drawFullMap(ctx, tileMap.getRooms());
+    drawPixelPostProcess(ctx, getFrame(), run.currentLayer || "shallow");
+    storyNpcManager.drawDialogue(ctx);
   }
 
   function triggerRoomRewardIfReady() {
@@ -828,6 +1369,7 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
     if (!npcManager.roomEnemiesCleared(room.id)) return;
 
     room.hasRewardTriggered = true;
+    addFlow(TUNING.flow?.roomClear ?? 24, "room cleared", "#f2b84b");
     const buildState = weapon.buildState;
     const weaponType = getWeaponTypeFromProfile(weapon);
 
@@ -1312,6 +1854,3 @@ export function createInkwellScene({ canvas, ctx, keys, mouse, weapon, getFrame,
 
   return { start, update, draw, handleKey };
 }
-
-
-

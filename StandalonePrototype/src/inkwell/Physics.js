@@ -1,4 +1,4 @@
-import { TILE, WORLD_H, WORLD_W } from "../core/config.js";
+﻿import { TILE, WORLD_H, WORLD_W } from "../core/config.js?v=27";
 
 export function createPhysics(tileMap) {
   function moveEntity(entity) {

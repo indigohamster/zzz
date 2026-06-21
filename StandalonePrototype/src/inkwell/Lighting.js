@@ -1,4 +1,4 @@
-import { H, TILE, Tile, W } from "../core/config.js";
+﻿import { H, TILE, Tile, W } from "../core/config.js?v=27";
 
 export function drawInkwellLighting(ctx, { camera, player, tileMap, npcs }) {
   ctx.save();

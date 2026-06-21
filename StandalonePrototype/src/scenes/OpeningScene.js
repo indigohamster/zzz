@@ -1,4 +1,4 @@
-﻿import { H, W } from "../core/config.js";
+﻿import { H, W } from "../core/config.js?v=27";
 import { drawPaperBackground, label } from "../core/render.js";
 
 // Opening scene phases

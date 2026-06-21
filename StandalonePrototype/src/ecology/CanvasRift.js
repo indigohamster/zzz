@@ -286,23 +286,42 @@ export function drawRifts(ctx, rifts, cameraX, cameraY) {
     const sx = r.x - cameraX, sy = r.y - cameraY;
     if (sx < -60 || sx > 1020 || sy < -60 || sy > 600) continue;
 
-    const visual = RIFT_VISUALS[r.config.visual];
-    if (visual) {
-      visual.draw(ctx, sx, sy, r.glow, r.config.color);
-    }
+    const x = Math.floor(sx);
+    const y = Math.floor(sy);
 
-    // 光晕
+    // Pixel backing plate: keeps rifts legible over busy Terraria-like tiles.
+    ctx.fillStyle = "rgba(5,7,11,0.62)";
+    ctx.fillRect(x - 30, y - 38, 60, 76);
+    ctx.strokeStyle = r.config.color;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x - 30.5, y - 38.5, 60, 76);
+
     const grad = ctx.createRadialGradient(sx, sy, 8, sx, sy, 50);
     grad.addColorStop(0, r.config.glowColor + (0.4 + r.glow * 0.25) + ")");
     grad.addColorStop(1, r.config.glowColor + "0)");
     ctx.fillStyle = grad;
     ctx.fillRect(sx - 50, sy - 50, 100, 100);
 
-    // 类型标签
+    const visual = RIFT_VISUALS[r.config.visual];
+    if (visual) {
+      visual.draw(ctx, sx, sy, r.glow, r.config.color);
+    }
+
+    ctx.fillStyle = "#05070b";
+    ctx.fillRect(x - 8, y - 8, 16, 16);
+    ctx.fillStyle = r.config.color;
+    ctx.fillRect(x - 5, y - 5, 10, 10);
+    ctx.fillStyle = "#f5efe0";
+    ctx.fillRect(x - 2, y - 2, 4, 4);
+
     ctx.fillStyle = r.config.color;
     ctx.font = "9px Segoe UI, Microsoft YaHei, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(r.config.name, sx, sy + 36);
+    const labelW = Math.max(56, ctx.measureText(r.config.name).width + 10);
+    ctx.fillStyle = "rgba(5,7,11,0.78)";
+    ctx.fillRect(Math.floor(sx - labelW / 2), Math.floor(sy + 39), labelW, 14);
+    ctx.fillStyle = r.config.color;
+    ctx.fillText(r.config.name, sx, sy + 49);
     ctx.textAlign = "start";
   }
 }

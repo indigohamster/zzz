@@ -1,7 +1,9 @@
-// Chapter 0: Prologue — 序章
+﻿// Chapter 0: Prologue — 序章
 // Walkable rental room → old sketchbook → Inkdot emerges → ink spread → enter ink realm.
-import { H, W } from "../core/config.js";
+import { H, W } from "../core/config.js?v=27";
 import { label } from "../core/render.js";
+import { drawBottomPrompt, drawInteractionHint, pixelLabel } from "./StudioRoom.js?v=4";
+import { drawProtagonistAt } from "../characters/protagonist/ProtagonistSprite.js?v=26";
 
 // ---- Constants ----
 const PHASE = {
@@ -128,14 +130,13 @@ function drawManuscripts(ctx, item) {
   ctx.fillRect(x, y + 10, 70, 45);
   ctx.fillRect(x + 15, y + 5, 65, 40);
   ctx.fillRect(x + 30, y, 60, 50);
-  ctx.strokeStyle = "#c5b99a";
-  ctx.lineWidth = 1;
+  ctx.fillStyle = "#c5b99a";
   for (let i = 0; i < 4; i++) {
-    ctx.beginPath();
-    ctx.moveTo(x + 5, y + 20 + i * 12);
-    ctx.quadraticCurveTo(x + 35, y + 10 + i * 10, x + 65, y + 18 + i * 12);
-    ctx.stroke();
+    ctx.fillRect(x + 8, y + 18 + i * 8, 42, 2);
+    ctx.fillRect(x + 54, y + 16 + i * 8, 10, 2);
   }
+  ctx.fillStyle = "#b23b48";
+  ctx.fillRect(x + 32, y + 6, 26, 3);
 }
 
 function drawSketchbook(ctx, item) {
@@ -170,216 +171,160 @@ function drawSketchbook(ctx, item) {
   ctx.fillRect(sx - 3, sy + 5, 3, sh - 10);
 }
 
-// ---- Player drawing ----
-function drawPlayerSprite(ctx, px, py, facing, animFrame, isWalking) {
-  const walkBob = isWalking ? Math.sin(animFrame * 0.15) * 2 : 0;
-  const y = py + walkBob;
-  ctx.fillStyle = "rgba(0,0,0,0.2)";
-  ctx.beginPath();
-  ctx.ellipse(px, FLOOR_Y, 10, 3, 0, 0, Math.PI * 2);
-  ctx.fill();
-  const stride = isWalking ? Math.sin(animFrame * 0.15) * 3 : 0;
-  ctx.fillStyle = "#181818";
-  ctx.fillRect(px - 2, y + 18 + stride, 5, 14);
-  ctx.fillRect(px - 2, y + 18 - stride, 5, 14);
-  ctx.fillStyle = "#f5f5dc";
-  ctx.fillRect(px - 3, y + 30 + stride, 7, 4);
-  ctx.fillRect(px - 3, y + 30 - stride, 7, 4);
-  ctx.fillStyle = "#2a2a2a";
-  ctx.fillRect(px - 6, y + 2, 12, 18);
-  ctx.fillStyle = "#222";
-  ctx.fillRect(px - 6, y + 2, 12, 4);
-  ctx.fillStyle = "#2a2a2a";
-  const armSwing = isWalking ? Math.sin(animFrame * 0.15) * 2 : 0;
-  ctx.fillRect(px + 4, y + 4 + armSwing, 4, 14);
-  ctx.fillRect(px - 8, y + 4 - armSwing, 4, 14);
-  ctx.fillStyle = "#e8b89d";
-  ctx.beginPath();
-  ctx.arc(px, y - 2, 7, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#101010";
-  ctx.beginPath();
-  ctx.arc(px, y - 5, 8, Math.PI, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#101010";
-  ctx.fillRect(px + 3, y - 4, 2, 2);
-}
-
 // ---- Room background ----
 function drawRoom(ctx, frame) {
-  ctx.fillStyle = "#3a3630";
-  ctx.fillRect(0, 0, W, FLOOR_Y);
-  ctx.strokeStyle = "#4a4540";
-  ctx.lineWidth = 1;
-  for (let wy = 0; wy < FLOOR_Y; wy += 60) {
-    ctx.beginPath();
-    ctx.moveTo(0, wy);
-    ctx.lineTo(W, wy);
-    ctx.stroke();
+  ctx.fillStyle = "#303740";
+  ctx.fillRect(0, 0, W, 88);
+  ctx.fillStyle = "#20262f";
+  ctx.fillRect(0, 88, W, 172);
+  ctx.fillStyle = "#141922";
+  ctx.fillRect(0, 260, W, FLOOR_Y - 260);
+  ctx.fillStyle = "rgba(240,217,165,0.06)";
+  for (let i = 0; i < 96; i++) {
+    const sx = (i * 59 + frame) % W;
+    const sy = 22 + ((i * 31) % 310);
+    ctx.fillRect(sx, sy, i % 5 === 0 ? 5 : 2, 2);
   }
   drawWindow(ctx, 60, 50, 140, 160, frame);
-  ctx.fillStyle = "#4d4030";
+  ctx.fillStyle = "#17130f";
   ctx.fillRect(0, FLOOR_Y, W, H - FLOOR_Y);
-  ctx.strokeStyle = "#5a4d3e";
-  ctx.lineWidth = 1;
-  for (let fx = 0; fx < W; fx += 80) {
-    ctx.beginPath();
-    ctx.moveTo(fx, FLOOR_Y);
-    ctx.lineTo(fx, H);
-    ctx.stroke();
-  }
+  ctx.fillStyle = "#33281c";
+  for (let fy = FLOOR_Y + 8; fy < H; fy += 18) ctx.fillRect(0, fy, W, 2);
+  for (let fx = 0; fx < W; fx += 80) ctx.fillRect(fx, FLOOR_Y, 2, H - FLOOR_Y);
   drawLamp(ctx, 780, 310, frame);
-  ctx.fillStyle = "#f5f0e5";
+  ctx.fillStyle = "#05070b";
+  ctx.fillRect(714, 74, 74, 84);
+  ctx.fillStyle = "#d8cfb8";
   ctx.fillRect(720, 80, 60, 70);
-  ctx.strokeStyle = "#2a2824";
-  ctx.lineWidth = 1;
-  ctx.strokeRect(720, 80, 60, 70);
-  ctx.fillStyle = "#c5b99a";
+  ctx.fillStyle = "#b9a98a";
   for (let cr = 0; cr < 5; cr++) {
     for (let cc = 0; cc < 7; cc++) {
       ctx.fillRect(726 + cc * 8, 102 + cr * 10, 5, 4);
     }
   }
+  pixelLabel(ctx, "RENT DUE", 724, 96, 10, "#5c554c");
 }
 
 function drawWindow(ctx, x, y, w, h, frame) {
-  ctx.fillStyle = "#2a2018";
+  ctx.fillStyle = "#05070b";
+  ctx.fillRect(x - 6, y - 6, w + 12, h + 12);
+  ctx.fillStyle = "#0b1320";
   ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = "#0a0a18";
-  ctx.fillRect(x + 6, y + 6, w - 12, h - 12);
-  const moonX = x + w - 30, moonY = y + 30;
-  ctx.fillStyle = "#e8e0c8";
-  ctx.beginPath();
-  ctx.arc(moonX, moonY, 16, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#0a0a18";
-  ctx.beginPath();
-  ctx.arc(moonX + 5, moonY - 3, 13, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#c8d8e8";
+  ctx.fillStyle = "#d8cfb8";
+  ctx.fillRect(x + w - 44, y + 24, 24, 24);
+  ctx.fillStyle = "#0b1320";
+  ctx.fillRect(x + w - 34, y + 18, 22, 28);
+  ctx.fillStyle = "#7dd3fc";
   for (let i = 0; i < 8; i++) {
-    const sx = x + 15 + ((i * 17 + frame * 0.3) % (w - 30));
+    const sx = x + 15 + ((i * 17 + Math.floor(frame * 0.3)) % (w - 30));
     const sy = y + 15 + (i * 13 % (h - 30));
     ctx.fillRect(sx, sy, 2, 2);
   }
-  ctx.fillStyle = "#2a2018";
+  ctx.fillStyle = "#263b55";
+  for (let i = 0; i < 4; i++) {
+    const bx = x + 18 + i * 28;
+    const bh = 20 + ((i * 17) % 48);
+    ctx.fillRect(bx, y + h - 12 - bh, 18, bh);
+  }
+  ctx.fillStyle = "#05070b";
   ctx.fillRect(x + w / 2 - 2, y, 4, h);
   ctx.fillRect(x, y + h / 2 - 2, w, 4);
 }
 
 function drawLamp(ctx, x, y, frame) {
-  ctx.fillStyle = "#3d2d20";
-  ctx.fillRect(x - 15, y + 60, 60, 8);
-  ctx.fillRect(x + 10, y + 68, 8, 60);
-  ctx.fillRect(x + 35, y + 68, 8, 60);
-  ctx.fillStyle = "#2a2018";
-  ctx.fillRect(x + 10, y + 40, 34, 20);
+  ctx.save();
+  ctx.globalAlpha = 0.1 + 0.03 * Math.sin(frame * 0.08);
   ctx.fillStyle = "#f0d9a5";
-  ctx.beginPath();
-  ctx.moveTo(x + 5, y + 40);
-  ctx.lineTo(x + 49, y + 40);
-  ctx.lineTo(x + 38, y + 10);
-  ctx.lineTo(x + 16, y + 10);
-  ctx.fill();
-  const flicker = 0.06 + 0.02 * Math.sin(frame * 0.08);
-  const glowGrad = ctx.createRadialGradient(x + 27, y + 35, 4, x + 27, y + 10, 90);
-  glowGrad.addColorStop(0, "rgba(255, 220, 150, " + flicker.toFixed(2) + ")");
-  glowGrad.addColorStop(1, "rgba(255, 220, 150, 0)");
-  ctx.fillStyle = glowGrad;
-  ctx.beginPath();
-  ctx.arc(x + 27, y + 10, 90, 0, Math.PI * 2);
-  ctx.fill();
+  for (let i = 0; i < 6; i++) ctx.fillRect(x - 110 + i * 22, y - 22 + i * 18, 250 - i * 34, 16);
+  ctx.restore();
+
+  ctx.fillStyle = "#05070b";
+  ctx.fillRect(x - 18, y + 60, 66, 10);
+  ctx.fillRect(x + 10, y + 68, 8, 60);
+  ctx.fillRect(x + 36, y + 68, 8, 60);
+  ctx.fillStyle = "#2e2118";
+  ctx.fillRect(x + 8, y + 40, 38, 20);
+  ctx.fillStyle = "#f0d9a5";
+  ctx.fillRect(x + 8, y + 34, 38, 8);
+  ctx.fillRect(x + 16, y + 20, 22, 14);
+  ctx.fillStyle = "#f7f0df";
+  if ((frame % 90) < 84) ctx.fillRect(x + 18, y + 42, 18, 3);
 }
 
 // ---- Ink spread effect ----
 function drawInkSpread(ctx, progress, originX, originY) {
-  ctx.fillStyle = "rgba(5, 5, 15, " + (progress * 0.7).toFixed(2) + ")";
+  ctx.fillStyle = "rgba(5, 7, 11, " + (progress * 0.72).toFixed(2) + ")";
   ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = "#0a0a20";
-  ctx.lineWidth = 2 + progress * 4;
-  for (let i = 0; i < 16; i++) {
-    const angle = (i / 16) * Math.PI * 2;
-    const length = 30 + progress * 400;
-    const tx = originX + Math.cos(angle) * length;
-    const ty = originY + Math.sin(angle) * length;
-    ctx.beginPath();
-    ctx.moveTo(originX, originY);
-    const cpDist = length * 0.4;
-    ctx.quadraticCurveTo(
-      originX + Math.cos(angle + 0.5) * cpDist,
-      originY + Math.sin(angle + 0.5) * cpDist,
-      tx, ty
-    );
-    ctx.stroke();
+  const spread = 18 + progress * 420;
+  ctx.fillStyle = "#05070b";
+  for (let i = 0; i < 96; i++) {
+    const angle = (i / 96) * Math.PI * 2;
+    const wobble = 0.72 + ((i * 29) % 31) / 70;
+    const dist = spread * wobble;
+    const tx = Math.floor((originX + Math.cos(angle) * dist) / 4) * 4;
+    const ty = Math.floor((originY + Math.sin(angle) * dist * 0.68) / 4) * 4;
+    const steps = 4 + Math.floor(progress * 12);
+    for (let s = 0; s < steps; s++) {
+      const px = Math.floor((originX + (tx - originX) * (s / steps)) / 4) * 4;
+      const py = Math.floor((originY + (ty - originY) * (s / steps)) / 4) * 4;
+      ctx.fillRect(px, py, i % 3 === 0 ? 8 : 4, i % 4 === 0 ? 8 : 4);
+    }
   }
-  const pr = 10 + progress * 150;
-  const pg = ctx.createRadialGradient(originX, originY, pr * 0.1, originX, originY, pr);
-  pg.addColorStop(0, "rgba(40, 60, 140, 0.9)");
-  pg.addColorStop(0.5, "rgba(20, 40, 100, 0.4)");
-  pg.addColorStop(1, "rgba(10, 20, 60, 0)");
-  ctx.fillStyle = pg;
-  ctx.beginPath();
-  ctx.arc(originX, originY, pr, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.fillStyle = "rgba(125,211,252," + (0.26 + progress * 0.28).toFixed(2) + ")";
+  for (let r = 0; r < 5; r++) {
+    const w = 24 + progress * 120 + r * 14;
+    const h = 12 + progress * 66 + r * 8;
+    ctx.fillRect(originX - w / 2, originY - h / 2, w, 4);
+    ctx.fillRect(originX - w / 2, originY + h / 2, w, 4);
+    ctx.fillRect(originX - w / 2, originY - h / 2, 4, h);
+    ctx.fillRect(originX + w / 2, originY - h / 2, 4, h);
+  }
 }
 
 // ---- Inkdot drawing ----
 function drawInkdot(ctx, x, y, frame, alpha) {
   ctx.save();
   if (alpha !== undefined) ctx.globalAlpha = alpha;
-  const bounce = Math.sin(frame * 0.06) * 2;
-  const glowGrad = ctx.createRadialGradient(x, y + bounce, 2, x, y + bounce, 25);
-  glowGrad.addColorStop(0, "rgba(80, 120, 255, 0.5)");
-  glowGrad.addColorStop(1, "rgba(20, 40, 100, 0)");
-  ctx.fillStyle = glowGrad;
-  ctx.beginPath();
-  ctx.arc(x, y + bounce, 25, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#1a1a2e";
-  ctx.beginPath();
-  ctx.arc(x, y + bounce, 10, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(x - 8, y - 6 + bounce);
-  ctx.lineTo(x - 14, y - 18 + bounce);
-  ctx.lineTo(x - 2, y - 8 + bounce);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(x + 8, y - 6 + bounce);
-  ctx.lineTo(x + 14, y - 18 + bounce);
-  ctx.lineTo(x + 2, y - 8 + bounce);
-  ctx.fill();
-  ctx.fillStyle = "#80b0ff";
-  ctx.beginPath();
-  ctx.arc(x - 3, y - 1 + bounce, 2.5, 0, Math.PI * 2);
-  ctx.arc(x + 3, y - 1 + bounce, 2.5, 0, Math.PI * 2);
-  ctx.fill();
+  const bounce = Math.floor(Math.sin(frame * 0.06) * 2);
+  ctx.globalAlpha = (alpha ?? 1) * 0.32;
+  ctx.fillStyle = "#7dd3fc";
+  ctx.fillRect(x - 24, y - 16 + bounce, 48, 32);
+  ctx.fillRect(x - 14, y - 26 + bounce, 28, 52);
+  ctx.globalAlpha = alpha ?? 1;
+  ctx.fillStyle = "#05070b";
+  ctx.fillRect(x - 14, y - 12 + bounce, 28, 24);
+  ctx.fillRect(x - 20, y - 4 + bounce, 40, 18);
+  ctx.fillRect(x - 16, y - 20 + bounce, 7, 12);
+  ctx.fillRect(x + 9, y - 20 + bounce, 7, 12);
+  ctx.fillStyle = "#7dd3fc";
+  ctx.fillRect(x - 6, y - 2 + bounce, 4, 4);
+  ctx.fillRect(x + 3, y - 2 + bounce, 4, 4);
   ctx.restore();
 }
 
 // ---- Dialogue box ----
 function drawDialogueBox(ctx, speaker, text) {
-  const boxH = 68, boxY = H - boxH;
-  ctx.fillStyle = "rgba(8, 7, 10, 0.88)";
+  const boxH = 82;
+  const boxY = H - boxH;
+  ctx.fillStyle = "#05070b";
   ctx.fillRect(0, boxY, W, boxH);
-  ctx.strokeStyle = "#3a3630";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(0, boxY);
-  ctx.lineTo(W, boxY);
-  ctx.stroke();
+  ctx.fillStyle = "#111823";
+  ctx.fillRect(0, boxY + 4, W, 4);
+  ctx.fillStyle = "#f0d9a5";
+  ctx.fillRect(36, boxY + 18, 16, 16);
+  ctx.fillStyle = "#05070b";
+  ctx.fillRect(42, boxY + 24, 5, 5);
   if (speaker) {
-    ctx.fillStyle = "#f0d9a5";
-    ctx.font = '15px "Segoe UI", "Microsoft YaHei", sans-serif';
-    ctx.fillText(speaker, 40, boxY + 24);
+    pixelLabel(ctx, speaker, 68, boxY + 28, 14, "#f0d9a5");
   }
-  ctx.fillStyle = "#e8e0d0";
-  ctx.font = '16px "Segoe UI", "Microsoft YaHei", sans-serif';
-  ctx.fillText(text, 40, speaker ? boxY + 44 : boxY + 28);
-  const alpha = 0.4 + 0.3 * Math.sin(Date.now() * 0.004);
-  ctx.fillStyle = "rgba(200, 190, 170, " + alpha.toFixed(2) + ")";
-  ctx.font = '13px "Segoe UI", "Microsoft YaHei", sans-serif';
-  ctx.fillText("按 Enter 或空格继续", W - 170, boxY + 56);
+  const lineA = String(text ?? "").slice(0, 34);
+  const lineB = String(text ?? "").slice(34, 68);
+  pixelLabel(ctx, lineA, 68, speaker ? boxY + 52 : boxY + 36, 15, "#f7f0df");
+  if (lineB) pixelLabel(ctx, lineB, 68, speaker ? boxY + 72 : boxY + 58, 15, "#f7f0df");
+  const pulse = 0.45 + 0.25 * Math.sin(Date.now() * 0.004);
+  ctx.fillStyle = "rgba(240,217,165," + pulse.toFixed(2) + ")";
+  ctx.fillRect(W - 148, boxY + 54, 112, 4);
+  pixelLabel(ctx, "Enter / Space", W - 158, boxY + 72, 12, "#a99d8c");
 }
 
 // ---- Main factory ----
@@ -565,16 +510,17 @@ export function createChapter0Scene({ canvas, ctx, keys, mouse, gameState, onDon
         keys.has("arrowleft") || keys.has("a") ||
         keys.has("arrowright") || keys.has("d")
       );
-      drawPlayerSprite(ctx, player.x, player.y, player.facing, player.animFrame, isWalking);
+      drawProtagonistAt(ctx, {
+        x: player.x + player.w / 2,
+        footY: player.y + player.h,
+        facing: player.facing,
+        frame: player.animFrame,
+        walkSpeed: isWalking ? PLAYER_SPEED : 0,
+        showTank: false,
+      });
     }
     if (phase === PHASE.EXPLORE && nearItem && !nearItem.inspected && !showingDialogue) {
-      const px = nearItem.x + nearItem.w / 2 - 40;
-      const py = nearItem.y - 16;
-      ctx.fillStyle = "rgba(8, 7, 10, 0.75)";
-      ctx.fillRect(px - 6, py - 4, 90, 22);
-      ctx.fillStyle = "#f0d9a5";
-      ctx.font = '13px "Segoe UI", "Microsoft YaHei", sans-serif';
-      ctx.fillText("按 E 查看 " + nearItem.label, px, py + 13);
+      drawInteractionHint(ctx, "E  " + nearItem.label, nearItem.x + nearItem.w / 2, nearItem.y - 2, true);
     }
     if (phase === PHASE.INK_SPREAD || phase === PHASE.INK_ENTRY || phase === PHASE.FADE_OUT) {
       drawInkSpread(ctx, inkSpreadProgress, inkdotX, inkdotY);
@@ -586,6 +532,8 @@ export function createChapter0Scene({ canvas, ctx, keys, mouse, gameState, onDon
     if (showingDialogue && activeLines.length > 0 && lineIndex < activeLines.length) {
       const line = activeLines[lineIndex];
       drawDialogueBox(ctx, line.speaker, line.text);
+    } else if (phase === PHASE.EXPLORE) {
+      drawBottomPrompt(ctx, "A/D move. E inspect. The old sketchbook is the first doorway.");
     }
   }
 

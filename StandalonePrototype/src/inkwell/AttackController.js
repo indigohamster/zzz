@@ -1016,7 +1016,6 @@ function logBuildAttackStats(buildAttack, player) {
 
 function getAttackPatternConfig(weapon = null) {
   if (!weapon) {
-    logWeaponFallback("missing weapon profile");
     return WEAPON_ATTACK_PATTERNS.arcSlash;
   }
   const attackPattern = weapon.attackPattern ?? weapon.archetype?.attackPattern ?? weapon.combat?.attackPattern;
@@ -1370,7 +1369,7 @@ function getComboResetFrames() {
 
 function getWeaponDamage(weapon) {
   const damage = weapon?.finalStats?.damage ?? weapon?.combat?.damage ?? BASIC_SLASH_ATTACK.damage;
-  if (!weapon?.finalStats?.damage && !weapon?.combat?.damage) logWeaponFallback("missing damage");
+  if (weapon && !weapon?.finalStats?.damage && !weapon?.combat?.damage) logWeaponFallback("missing damage");
   return Number.isFinite(damage) ? damage : BASIC_SLASH_ATTACK.damage;
 }
 

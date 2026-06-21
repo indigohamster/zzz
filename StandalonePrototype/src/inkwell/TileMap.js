@@ -1,12 +1,13 @@
-﻿import { TILE, Tile, WORLD_H, WORLD_W } from "../core/config.js";
-import { drawTile } from "./TileDrawing.js";
-import { createMapValidator } from "./MapValidator.js";
-import { generateInkwellWorld } from "./WorldGen.js";
+﻿import { TILE, Tile, WORLD_H, WORLD_W } from "../core/config.js?v=27";
+import { drawTile } from "./TileDrawing.js?v=2";
+import { createMapValidator } from "./MapValidator.js?v=3";
+import { generateInkwellWorld } from "./WorldGen.js?v=5";
 
 export function createTileMap(ctx) {
   const world = Array.from({ length: WORLD_H }, () => Array(WORLD_W).fill(Tile.Air));
   const tileVariant = Array.from({ length: WORLD_H }, () => Array(WORLD_W).fill(0));
   let rooms = [];
+  let mapRule = null;
 
   const validator = createMapValidator();
 
@@ -51,6 +52,14 @@ export function createTileMap(ctx) {
     return rooms;
   }
 
+  function setMapRule(nextRule) {
+    mapRule = nextRule ? { ...nextRule } : null;
+  }
+
+  function getMapRule() {
+    return mapRule ? { ...mapRule } : null;
+  }
+
   function getRoomByType(type) {
     return rooms.find((room) => room.type === type) || null;
   }
@@ -70,6 +79,6 @@ export function createTileMap(ctx) {
     }
   }
 
-  const api = { generate, solidAtPixel, tileAt, variantAt, setTile, setVariant, setRooms, getRooms, getRoomByType, draw };
+  const api = { generate, solidAtPixel, tileAt, variantAt, setTile, setVariant, setRooms, getRooms, getRoomByType, setMapRule, getMapRule, draw };
   return api;
 }

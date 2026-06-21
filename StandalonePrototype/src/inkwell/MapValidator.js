@@ -1,4 +1,4 @@
-﻿import { Tile, WORLD_H, WORLD_W } from "../core/config.js";
+﻿import { Tile, WORLD_H, WORLD_W } from "../core/config.js?v=27";
 
 // ── 玩家 clearance（与 WorldGen.js hasPlayerClearance 一致）─────────
 function hasPlayerClearance(tileMap, x, y) {
@@ -62,6 +62,12 @@ function adjacentReachable(tileMap, a, b) {
 
 // ── 保底地图 ───────────────────────────────────────────────────────
 function generateFallbackMap(tileMap) {
+  tileMap.setMapRule?.({
+    id: "fallback_corridor",
+    name: "保底横廊",
+    shortName: "保底",
+    desc: "生成器重试失败后的可达横向保底图。",
+  });
   for (let y = 0; y < WORLD_H; y++)
     for (let x = 0; x < WORLD_W; x++)
       tileMap.setTile(x, y, Tile.Air);
